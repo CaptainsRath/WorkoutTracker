@@ -24,7 +24,5 @@
 | Video Link  |      link_to_video     |
 
 ## Project Summary
-We have 3 different ideas for the course project so far: 
-- Tinder for Cats: The website will function similarly to Tinder by providing possible matches for the cats to swipe on. The matches will be provided based on metrics gathered by the website such as left-right swipe ratio, common interests, etc.
-- A website which will suggest recipes to cook given a grocery list 
-- A workout generator which will suggest workouts based on previously completed exercises and the interests of the user. 
+
+It can be a struggle to improve your health if you are unsure of where to start or if you are too busy to dedicate much time to it. We propose a workout companion website that will make the process easier for beginners and veterans alike to create workouts, keep track of progress, and learn about new exercises. The user will be able to manually and automatically generate workouts for specific muscle groups with the number of sets, reps, and weight for previously completed exercises automatically carried over for ease of use. 
