@@ -19,7 +19,7 @@
 
 |   Info      |        Description     |
 | ----------- | ---------------------- |
-|  Title      |     Tinder for Cats    |
+| Title       |      SRSL Fit          |
 | System URL  |      link_to_system    |
 | Video Link  |      link_to_video     |
 
