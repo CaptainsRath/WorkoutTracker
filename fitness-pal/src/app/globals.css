@@ -1,0 +1,17 @@
+/* the entire app is styled using TailwindCSS by default */
+@import 'tailwindcss';
+
+:root {
+    /* these are css variables, must use 2 dashes, call using var(--var-name) */
+    --background: #000000;
+    --foreground: #ffffff;
+}
+
+body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: Arial, Helvetica, sans-serif;
+    padding: 1em;
+    height: 100dvh;
+    width: 100dvw;
+}
