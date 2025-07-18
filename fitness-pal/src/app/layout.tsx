@@ -17,6 +17,7 @@ export const metadata: Metadata = {
     description: 'CS 411 Team 007',
 }
 
+// GLOBAL LAYOUT, CONTAINS DOM ROOT, PERSISTS ACROSS ALL ROUTES.
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
     return (
         <html lang='en'>
