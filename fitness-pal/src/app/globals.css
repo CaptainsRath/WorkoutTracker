@@ -11,7 +11,19 @@ body {
     background: var(--background);
     color: var(--foreground);
     font-family: Arial, Helvetica, sans-serif;
-    padding: 1em;
+    margin: 0 1rem 1em 1em;
     height: 100dvh;
-    width: 100dvw;
+    /* allow for scrolling */
+    overflow-y: scroll;
+
+    /* hide IE & Edge scrollbar */
+    -ms-overflow-style: none;
+
+    /* Firefox: hide scrollbar */
+    scrollbar-width: none;
+}
+
+/* Chrome, Safari, Opera too */
+body::-webkit-scrollbar {
+  display: none;
 }
