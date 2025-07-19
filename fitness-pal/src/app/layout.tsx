@@ -1,7 +1,11 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
+
 import Navigation from '@/src/components/navigation'
+
+// import all the providers and apply them all to the app.
+import NextAppProviders from '@/src/app/providers'
 
 const geistSans = Geist({
     variable: '--font-geist-sans',
@@ -24,7 +28,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <html lang='en'>
             <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
                 <Navigation />
-                {children}
+
+                <NextAppProviders>{children}</NextAppProviders>
             </body>
         </html>
     )

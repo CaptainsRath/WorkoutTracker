@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 
-export default function NoPrefetchLink({ href }: { href: string }) {
+export default function SmartPrefetchLink({ href }: { href: string }) {
     const [active, setActive] = useState(false)
     return (
         <Link

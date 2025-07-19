@@ -1,12 +1,12 @@
-import NoPrefetchLink from '@/src/components/noPrefetchLink'
+import SmartPrefetchLink from "./smartPrefetchLink"
 
 export default function Navigation() {
     return (
         <nav className='h-10 flex flex-row rounded'>
-            <NoPrefetchLink href='/' />
-            <NoPrefetchLink href='/dashboard' />
-            <NoPrefetchLink href='/exercises' />
-            <NoPrefetchLink href='/workouts' />
+            <SmartPrefetchLink href='/' />
+            <SmartPrefetchLink href='/dashboard' />
+            <SmartPrefetchLink href='/exercises' />
+            <SmartPrefetchLink href='/workouts' />
         </nav>
     )
 }
