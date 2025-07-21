@@ -34,11 +34,13 @@ CREATE TABLE `Muscles` (
 
 -- WorkoutTemplates depends on Users.
 CREATE TABLE `WorkoutTemplates` (
-    -- Added AUTO_INCREMENT for the workoutId.
-    `workoutId` INT PRIMARY KEY AUTO_INCREMENT,
+    -- Added AUTO_INCREMENT
+    `workoutId` INT AUTO_INCREMENT,
     `userId` INT,
     `lastDate` DATETIME NULL,
     `name` VARCHAR(255),
+    -- Added both id's as primary key because it's a weak entity that's tied to the user
+    PRIMARY KEY(workoutId, userId),
     FOREIGN KEY (`userId`) REFERENCES `Users`(`userId`) ON DELETE CASCADE
 );
 
@@ -51,9 +53,10 @@ CREATE TABLE `Exercises` (
     -- Renamed `desc` to `description` because DESC is a reserved SQL keyword.
     `description` VARCHAR(500) NULL,
     `video` VARCHAR(255) NULL,
-    -- Added ON DELETE SET NULL: If a user is deleted, their custom exercises are not deleted,
-    -- but are now owned by no one (ownerId becomes NULL).
-    FOREIGN KEY (`ownerId`) REFERENCES `Users`(`userId`) ON DELETE SET NULL
+    -- Switched ON DELETE SET NULL with ON DELETE CASCADE:
+    -- If a user is deleted, their custom exercises should also be deleted.
+    -- We can't set the exercises to NULL because we use that to specify whether an exercise is default.
+    FOREIGN KEY (`ownerId`) REFERENCES `Users`(`userId`) ON DELETE CASCADE
 );
 
 -- This is a "join table" or "linking table". It depends on Exercises and Muscles.
@@ -91,13 +94,15 @@ CREATE TABLE `ExerciseLog` (
 
 -- Depends on ExerciseLog.
 CREATE TABLE `Sets` (
-    -- Added AUTO_INCREMENT for a unique ID for each set.
-    `setId` INT PRIMARY KEY AUTO_INCREMENT,
+    -- Added AUTO_INCREMENT
+    `setId` INT AUTO_INCREMENT,
     `userId` INT,
     `exerciseId` INT,
     `order` INT NOT NULL,
     `lbs` REAL NOT NULL,
     `reps` INT NOT NULL,
+    -- The primary key is made up of the combination of all 3 because 
+    -- this is a weak entity relationship with the ExerciseLog record
+    PRIMARY KEY(setId, userId, exerciseId),
     FOREIGN KEY (`userId`, `exerciseId`) REFERENCES `ExerciseLog`(`userId`, `exerciseId`) ON DELETE CASCADE
-    -- Removed the trailing comma that was causing a syntax error.
 );
