@@ -48,7 +48,7 @@ CREATE TABLE `WorkoutTemplates` (
 CREATE TABLE `Exercises` (
     -- Added AUTO_INCREMENT.
     `exerciseId` INT PRIMARY KEY AUTO_INCREMENT,
-    `ownerId` INT,
+    `ownerId` INT DEFAULT NULL,
     `name` VARCHAR(255) NOT NULL,
     -- Renamed `desc` to `description` because DESC is a reserved SQL keyword.
     `description` VARCHAR(500) NULL,
@@ -72,11 +72,12 @@ CREATE TABLE `ExercisesMuscles` (
 -- Depends on WorkoutTemplates and Exercises.
 CREATE TABLE `WorkoutContents` (
     `workoutId` INT,
+    `userId` INT,
     `exerciseId` INT,
     -- `order` is a reserved keyword, so it's good practice to wrap it in backticks.
     `order` INT NOT NULL,
-    PRIMARY KEY (`workoutId`, `exerciseId`),
-    FOREIGN KEY (`workoutId`) REFERENCES `WorkoutTemplates`(`workoutId`) ON DELETE CASCADE,
+    PRIMARY KEY (`workoutId`, `userId`, `exerciseId`),
+    FOREIGN KEY (`workoutId`, `userId`) REFERENCES `WorkoutTemplates`(`workoutId`, `userId`) ON DELETE CASCADE,
     FOREIGN KEY (`exerciseId`) REFERENCES `Exercises`(`exerciseId`) ON DELETE CASCADE
 );
 
