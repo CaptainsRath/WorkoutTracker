@@ -53,7 +53,7 @@ CREATE TABLE `Exercises` (
     `ownerId` INT DEFAULT NULL,
     `name` VARCHAR(255) NOT NULL,
     -- Renamed `desc` to `description` because DESC is a reserved SQL keyword.
-    `description` VARCHAR(500) NULL,
+    `description` TEXT NULL,
     `video` VARCHAR(255) NULL,
     -- Switched ON DELETE SET NULL with ON DELETE CASCADE:
     -- If a user is deleted, their custom exercises should also be deleted.
