@@ -1,4 +1,6 @@
--- Create database to be used
+-- Create database to be used, Drop if already created
+DROP DATABASE `srsl-fit`;
+
 CREATE DATABASE `srsl-fit`;
 
 -- Specify which database to use
