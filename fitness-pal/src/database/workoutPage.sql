@@ -6,12 +6,20 @@ USE `srsl-fit`;
 -- It's assumed that the front end will already have the name of the workout because 
 -- the user would've selected that before entering this page.
 -- We'll pass in ”uId” for WorkoutContents userId, “woId” for Workoutcontents workoutId instead of the 1's
-SELECT exers.exerciseId, exers.name, eLog.`like`, s.setId, s.lbs, s.reps
+-- THIS QUERY MEETS THE CRITERIA FOR STAGE 3:
+SELECT exers.exerciseId, exers.name, eLog.`like`, conts.`order`,
+	JSON_ARRAYAGG(
+		JSON_OBJECT('setId', s.setId, 'order', s.`order`, 'lbs', s.lbs, 'reps', s.reps)
+	) AS sets
 FROM WorkoutContents conts
 LEFT JOIN Exercises exers ON exers.exerciseId = conts.exerciseId
 LEFT JOIN ExerciseLog eLog ON eLog.userId = conts.userId AND eLog.exerciseId = exers.exerciseId
-LEFT JOIN Sets s ON s.userId = eLog.userId AND s.exerciseId = eLog.exerciseId
+LEFT JOIN (SELECT setId, userId, exerciseId, `order`, lbs, reps 
+		   FROM Sets 
+           ORDER BY `order`) s 
+	ON s.userId = eLog.userId AND s.exerciseId = eLog.exerciseId
 WHERE conts.userId = 1 AND conts.workoutId = 1
+GROUP BY exers.exerciseId, exers.name, eLog.`like`, conts.`order`
 ORDER BY conts.`order`;
 
 -- We're going to assume that a user just clicked the "Finish Workout" button.
