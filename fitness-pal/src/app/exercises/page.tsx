@@ -8,8 +8,8 @@ export default async function Exercises() {
             <section className='grid grid-flow-row gap-5 grid-cols-3 mx-5 mb-5 [&>*]:bg-emerald-500'>
                 {Array.from({ length: 20 }).map((_, idx) => {
                     return (
-                        <GenericCard href={`/exercises/${idx}`} key={`exercise-id-${idx}`}>
-                            exercise {idx}
+                        <GenericCard href={`/exercises/${idx + 1}`} key={`exercise-id-${idx + 1}`}>
+                            exercise {idx + 1}
                         </GenericCard>
                     )
                 })}
