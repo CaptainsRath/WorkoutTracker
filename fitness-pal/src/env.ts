@@ -4,8 +4,10 @@ import { z } from 'zod'
 export const env = createEnv({
     server: {
         DATABASE_URL: z.string().url(),
+        YOUTUBE_API_KEY: z.string(),
     },
     runtimeEnv: {
         DATABASE_URL: process.env.DATABASE_URL,
+        YOUTUBE_API_KEY: process.env.YOUTUBE_API_KEY,
     },
 })
