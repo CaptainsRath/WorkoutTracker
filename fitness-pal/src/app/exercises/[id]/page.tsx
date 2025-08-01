@@ -17,7 +17,7 @@ export default async function Exercise({ params }: Props) {
          FROM Exercises exers
          JOIN ExercisesMuscles ems ON ems.exerciseId = exers.exerciseId 
          JOIN Muscles musc ON ems.muscleId = musc.muscleId
-         WHERE exers.exerciseId = ?
+         WHERE exers.exerciseId = ? AND (exers.ownerId = 1 OR exers.ownerId IS NULL)
          GROUP BY exers.exerciseId, exers.name, exers.description`,
         [Number(id)]
     )
