@@ -1,6 +1,7 @@
 import { env } from "@/src/env";
 import { createConnection } from "mysql2/promise";
 import GenericCard from '@/src/components/genericCard'
+import CreateWorkoutButton from '@/src/components/CreateWorkoutButton'
 
 // DB data used for the cards
 interface WorkoutTemplateData {
@@ -28,12 +29,8 @@ function getTimeSince(date: Date): string {
     for (const currVar of timeVars) {
         const amount = Math.floor(secondsSince / currVar.seconds);
         if (amount > 0) {
-            var timeStr = ""
-            if (amount === 1) {
-                timeStr = currVar.unit;
-            } else {
-                timeStr = `${currVar.unit}s`;
-            }
+            var timeStr = currVar.unit;
+            if (amount > 1) timeStr = `${timeStr}s`;
             return `About ${amount} ${timeStr} ago`;
         }
     }
@@ -54,6 +51,9 @@ export default async function Workouts() {
     return (
         <main className='w-full h-fit flex-wrap bg-blue-700 rounded'>
             <h1 className='font-bold w-full text-center'>WORKOUTS</h1>
+            <div className="text-center my-4">
+                <CreateWorkoutButton/>
+            </div>
             <section className='grid grid-flow-row gap-5 grid-cols-3 mx-5 mb-5 [&>*]:bg-blue-500'>
                 {workoutTemplates.map((workoutTemplates) => {
                     return (
