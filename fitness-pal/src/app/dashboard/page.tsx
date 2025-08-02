@@ -1,8 +1,106 @@
-export default function DashBoard() {
+import { env } from "@/src/env";
+import { createConnection, RowDataPacket } from "mysql2/promise";
+import GenericCard from '@/src/components/genericCard'
+
+// Force the page to be dynamically rendered on every request.
+export const dynamic = 'force-dynamic';
+
+// DB data used for the cards
+interface WorkoutTemplateData extends RowDataPacket {
+    workoutId: number;
+    userId: number;
+    lastDate: Date;
+    name: string;
+    lastDuration: number;
+}
+
+// User data from DB
+interface UserData extends RowDataPacket {
+    UserFirstName: string;
+}
+
+function getTimeSince(date: Date): string {
+    const now = new Date();
+    const secondsSince = (now.getTime() - date.getTime()) / 1000;
+
+    // seconds is the amount of 1 full unit of specified time in seconds
+    const timeVars = [
+        {unit: "year",   seconds: 60 * 60 * 24 * 365},
+        {unit: "week",   seconds: 60 * 60 * 24 * 7},
+        {unit: "day",    seconds: 60 * 60 * 24},
+        {unit: "hour",   seconds: 60 * 60},
+        {unit: "minute", seconds: 60},
+        {unit: "second", seconds: 1},
+    ]
+
+    // Return the time since in the greatest unit of time
+    for (const currVar of timeVars) {
+        const amount = Math.floor(secondsSince / currVar.seconds);
+        if (amount > 0) {
+            var timeStr = ""
+            if (amount === 1) {
+                timeStr = currVar.unit;
+            } else {
+                timeStr = `${currVar.unit}s`;
+            }
+            return `About ${amount} ${timeStr} ago`;
+        }
+    }
+    return "Now"
+}
+
+function formatDuration(totalSeconds: number | null): string {
+    if (totalSeconds === null || totalSeconds <= 0) {
+        return "N/A";
+    }
+
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    const parts: string[] = [];
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+    if (seconds > 0) parts.push(`${seconds}s`);
+
+    return parts.length > 0 ? parts.join(' ') : '0s';
+}
+
+export default async function DashBoard() {
+    const conn = await createConnection(env.DATABASE_URL);
+    const userId = 1; // TODO: replace with a paramter passed into the file
+
+    // Get user's name
+    const [users, _] = await conn.execute<UserData[]>(
+        'SELECT FirstName FROM Users WHERE userId = ?',
+        [userId]
+    );
+    const user = users[0];
+
+    // Query for the 3 most recent workouts
+    const [workoutTemplates, __] = await conn.execute<WorkoutTemplateData[]>(
+        'SELECT workoutId, lastDate, name, lastDuration FROM WorkoutTemplates WHERE userId = ? ORDER BY lastDate DESC LIMIT 3',
+        [userId]
+    );
+    await conn.end();
+
     return (
-        <main className='w-full h-full flex justify-center bg-orange-700 rounded'>
-            <h1 className='font-bold'>DASHBOARD ROUTE</h1>
+        <main className='w-full h-fit flex-wrap bg-orange-700 rounded'>
+            <h1 className='font-bold w-full text-center text-2xl pt-4'>Hello, {user?.UserFirstName || 'User'}!</h1>
+            <h2 className='font-bold w-full text-center text-xl py-2'>Your 3 most recent workouts:</h2>
+            <section className='grid grid-flow-row gap-5 grid-cols-3 mx-5 mb-5 [&>*]:bg-orange-500'>
+                {workoutTemplates.map((workoutTemplate) => {
+                    return (
+                        <GenericCard href={`/workouts/${workoutTemplate.workoutId}`} key={workoutTemplate.workoutId}>
+                            <div className="font-bold">{workoutTemplate.name}</div>
+                            <div className="text-sm text-gray-100">{getTimeSince(workoutTemplate.lastDate)}</div>
+                            <div className="text-sm text-gray-200 mt-2">
+                                <span className="font-semibold">Last session:</span> {formatDuration(workoutTemplate.lastDuration)}
+                            </div>
+                        </GenericCard>
+                    )
+                })}
+            </section>
         </main>
     )
 }
-
