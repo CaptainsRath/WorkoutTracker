@@ -43,7 +43,10 @@ export default async function Workouts() {
     // Query for the ID and name of all exercises
     const userId = 1; // TODO: replace with a paramter passed into the file
     const [workoutTemplates, _] = await conn.execute<WorkoutTemplateData[]>(
-        'SELECT workoutId, lastDate, name FROM WorkoutTemplates WHERE userId = ? ORDER BY lastDate ASC',
+        `SELECT workoutId, lastDate, name 
+        FROM WorkoutTemplates 
+        WHERE userId = ? 
+        ORDER BY lastDate DESC`,
         [userId]
     );
     await conn.end();
