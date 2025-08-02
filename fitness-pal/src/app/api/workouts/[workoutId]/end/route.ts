@@ -26,9 +26,10 @@ export async function POST(
       `Ending workout ${workoutId} for user ${userId} with duration ${duration}s`
     );
 
+    const now = new Date();
     await conn.execute(
-      "UPDATE WorkoutTemplates SET lastDuration = ?, lastDate = NOW() WHERE workoutId = ? AND userId = ?",
-      [duration, workoutId, userId]
+      "UPDATE WorkoutTemplates SET lastDuration = ?, lastDate = ? WHERE workoutId = ? AND userId = ?",
+      [duration, now, workoutId, userId]
     );
 
     await conn.end();
