@@ -348,3 +348,14 @@ BEGIN
 END //
 
 DELIMITER ;
+
+
+-- Query to view what has been stored in the database after the stored procedures
+-- (replace userId and workoutId)
+SELECT * 
+FROM WorkoutTemplates
+LEFT JOIN WorkoutContents ON WorkoutContents.workoutId = WorkoutTemplates.workoutId
+LEFT JOIN Exercises ON WorkoutContents.exerciseId = Exercises.exerciseId
+LEFT JOIN ExerciseLog ON Exercises.exerciseId = ExerciseLog.exerciseId AND ExerciseLog.userId = WorkoutTemplates.userId
+LEFT JOIN Sets ON Sets.userId = ExerciseLog.userId AND Sets.exerciseId = ExerciseLog.exerciseId
+WHERE WorkoutTemplates.userId = 1 AND WorkoutTemplates.workoutId = 20;
