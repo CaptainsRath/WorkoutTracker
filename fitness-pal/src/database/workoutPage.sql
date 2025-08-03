@@ -23,30 +23,328 @@ GROUP BY exers.exerciseId, exers.name, eLog.`like`, conts.`order`
 ORDER BY conts.`order`;
 
 -- We're going to assume that a user just clicked the "Finish Workout" button.
--- With this query we're assuming the user created the workout from an empty template
--- and they have chosen to save it.
--- We'll need to increment the counters which track how many times the user has performed 
--- each of the exercises on the page.
--- We'll need to add/update/delete set information for each exercise
--- We'll need to store the workout template
--- We'll need to link all of the appropriate exercises to the workout template in 
--- the correct order
+-- So we need to update the template and the counters which track how
+-- often the user has performed an exercise.
+-- The stored procedure uses the assumption that the "order" parameters
+-- are wrong in the exercises and sets arrays and instead goes off of the
+-- literal order of the contents (reordering is much easier to do in next.js)
+
+USE `prod`;
+
+DROP PROCEDURE IF EXISTS UpdateInsertCompletedWorkout;
+
+DELIMITER //
+
+CREATE PROCEDURE UpdateInsertCompletedWorkout(
+	IN in_workoutId INT,
+    IN in_userId INT,
+	IN in_workoutJson JSON,
+    IN in_exercisesJson JSON
+)
+BEGIN
+	DECLARE varName VARCHAR(255);
+	DECLARE varLastDate DATETIME DEFAULT NULL;
+    DECLARE varLbs REAL DEFAULT 0;
+    DECLARE varReps INT DEFAULT 0;
+    DECLARE varExerciseId INT;
+    DECLARE varLike BOOL;
+    DECLARE varSetId INT DEFAULT NULL;
+    
+    DECLARE varNumExercises INT DEFAULT 0;
+    DECLARE varExerciseIdx INT DEFAULT 0;
+    DECLARE varNumSets INT DEFAULT 0;
+    DECLARE varSetIdx INT DEFAULT 0;
+    
+    -- Putting everything into a transaction just incase something breaks so it can be rolled back.
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		ROLLBACK;
+        SIGNAL SQLSTATE '45000'
+		SET MESSAGE_TEXT = 'Stored Procedure failed internally and was rolled back';
+	END;
+    
+    -- Set the transaction as repeatable read because it may read the same row more than once
+    -- and I believe the deletion of old rows requires the reading of the table contents to 
+    -- be consistent because of how the WHERE is structured.
+    SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    
+    START TRANSACTION;
+
+	SET varName = JSON_UNQUOTE(JSON_UNQUOTE(JSON_EXTRACT(in_workoutJson, '$.name')));    
+
+	SET varLastDate = STR_TO_DATE(
+		SUBSTRING(JSON_UNQUOTE(JSON_EXTRACT(in_workoutJson, '$.lastDate')), 1, 19),
+		'%Y-%m-%dT%H:%i:%s'
+	);
+
+	-- Update the workout template with the new data
+	UPDATE WorkoutTemplates 
+	SET lastDate = varLastDate, name = varName 
+	WHERE userId = in_userId AND workoutId = in_workoutId;
+
+	-- First we'll delete the unneeded joins
+	-- Delete unneded sets joins (if user removed some sets)
+	DELETE s FROM Sets s
+	INNER JOIN WorkoutContents wc ON s.userId = wc.userId AND s.exerciseId = wc.exerciseId
+	WHERE wc.workoutId = in_workoutId AND wc.userId = in_userId
+	AND NOT EXISTS (
+		SELECT 1 
+		FROM JSON_TABLE(
+			in_exercisesJson,
+			'$[*]' COLUMNS (
+				exerciseId INT PATH '$.exerciseId',
+				sets JSON PATH '$.sets'
+			)
+		) AS exercise,
+		JSON_TABLE(
+			exercise.sets,
+			'$[*]' COLUMNS (
+				setId INT PATH '$.setId'
+			)
+		) AS setData
+		WHERE exercise.exerciseId = s.exerciseId 
+		AND setData.setId = s.setId
+		AND setData.setId IS NOT NULL
+	);
+    
+    -- Delete unnneded WorkoutContents joins (if user removed exercises)
+    DELETE FROM WorkoutContents
+	WHERE (workoutId, userId, exerciseId) NOT IN (
+		SELECT in_workoutId, in_userId, e.exerciseId
+		FROM JSON_TABLE (
+			in_exercisesJson,
+            '$[*]' COLUMNS (
+				exerciseIdx FOR ORDINALITY,
+                exerciseId INT PATH '$.exerciseId'
+            )
+		) as e
+	);
+
+	-- We should only need to update and insert from here on out
+	SET varNumExercises = JSON_LENGTH(in_exercisesJson);
+    WHILE varExerciseIdx < varNumExercises DO
+    
+		SET varExerciseId = CAST(JSON_EXTRACT(in_exercisesJson, CONCAT('$[', varExerciseIdx, '].exerciseId')) AS SIGNED);
+        SET @likeUnprocessed = JSON_EXTRACT(in_exercisesJson, CONCAT('$[', varExerciseIdx, '].like'));
+        SET varLike = CASE
+			WHEN @likeUnprocessed IS NULL THEN NULL
+			WHEN CAST(@likeUnprocessed AS CHAR) = 'true' THEN 1
+			WHEN CAST(@likeUnprocessed AS CHAR) = '1' THEN 1
+			WHEN CAST(@likeUnprocessed AS CHAR) = 'false' THEN 0
+			WHEN CAST(@likeUnprocessed AS CHAR) = '0' THEN 0
+			ELSE NULL
+		END;
+        
+		-- WorkoutContents update/insert
+        INSERT INTO WorkoutContents (workoutId, userId, exerciseId, `order`)
+		VALUES (in_workoutId, in_userId, varExerciseId, varExerciseIdx)
+		ON DUPLICATE KEY UPDATE
+			`order` = varExerciseIdx;
+          
+		-- ExerciseLog update/insert (assuming the exercise was completed)
+        INSERT INTO ExerciseLog (userId, exerciseId, `like`, timesCompleted)
+        VALUES (in_userId, varExerciseId, varLike, 0)
+        ON DUPLICATE KEY UPDATE
+			`like` = varLike,
+			`timesCompleted` = `timesCompleted` + 1;
+    
+		-- Insert/Update sets
+		SET varNumSets = JSON_LENGTH(JSON_EXTRACT(in_exercisesJson, CONCAT('$[', varExerciseIdx, '].sets')));
+		WHILE varSetIdx < varNumSets DO
+            
+            -- setId can be null if the set row hasn't been created yet (user added it on the front-end side)
+            SET @setIdUnprocessed = JSON_EXTRACT(in_exercisesJson, CONCAT('$[', varExerciseIdx, '].sets[', varSetIdx, '].setId'));
+			IF @setIdUnprocessed IS NULL OR JSON_UNQUOTE(@setIdUnprocessed) = 'null' THEN
+				SET varSetId = NULL;
+			ELSE
+				SET varSetId = CAST(JSON_UNQUOTE(@setIdUnprocessed) AS SIGNED);
+			END IF;
+            
+            SET varLbs = CAST(JSON_EXTRACT(in_exercisesJson, CONCAT('$[', varExerciseIdx, '].sets[', varSetIdx, '].lbs')) AS DECIMAL(10,2));
+            SET varReps = CAST(JSON_EXTRACT(in_exercisesJson, CONCAT('$[', varExerciseIdx, '].sets[', varSetIdx, '].reps')) as SIGNED);
+            
+            IF varSetId IS NULL OR varSetId <= 0 THEN
+				INSERT INTO Sets(userId, exerciseId, `order`, lbs, reps)
+                VALUES (in_userId, varExerciseId, varSetIdx, varLbs, varReps);
+			ELSE
+				UPDATE Sets
+                SET `order` = varSetIdx, lbs = varLbs, reps = varReps
+                WHERE setId = varSetId AND userId = in_userId;
+            END IF;
+            
+            -- Increment loop variable
+            SET varSetIdx = varSetIdx + 1;
+        END WHILE;
+		
+        -- Reset/Increment loop variables
+        SET varSetIdx = 0;
+		SET varExerciseIdx = varExerciseIdx + 1;
+    END WHILE;
+    COMMIT;
+END //
+
+DELIMITER ;
 
 
--- I suppose if we give the user the option to not save the workout template then we'll
--- still need to do the following:
--- We'll need to increment the counters which track how many times the user has performed 
--- each of the exercises on the page.
--- We'll need to add/update/delete set information for each exercise
+-- With this stored procedure the user has the option to save the
+-- workout template without updating the exercise counters
+-- The stored procedure uses the assumption that the "order" parameters
+-- are wrong in the exercises and sets arrays and instead goes off of the
+-- literal order of the contents (reordering is much easier to do in next.js)
+-- There's only a one line difference from the stored procedure above
+-- since we still need to ensure the ExerciseLog connections exist
 
+USE `prod`;
 
--- If we assume the user clicked the "Finish Workout" button and they choose to update
--- the WorkoutTemplate that the workout was based off of (so it already existed)
--- We'd need to:
--- We'll need to increment the counters which track how many times the user has performed 
--- each of the exercises on the page.
--- We'll need to add/update/delete set information for each exercise
--- Delete all WorkoutContents entries that are connected to the WorkoutTemplate for exercises
--- that no longer are found in the WorkoutTemplate
--- Update the orders of existing WorkoutContents entries
--- Add new WorkoutContents entries for new exercises
+DROP PROCEDURE IF EXISTS UpdateInsertTemplateOnly;
+
+DELIMITER //
+
+CREATE PROCEDURE UpdateInsertTemplateOnly(
+	IN in_workoutId INT,
+    IN in_userId INT,
+	IN in_workoutJson JSON,
+    IN in_exercisesJson JSON
+)
+BEGIN
+	DECLARE varName VARCHAR(255);
+	DECLARE varLastDate DATETIME DEFAULT NULL;
+    DECLARE varLbs REAL DEFAULT 0;
+    DECLARE varReps INT DEFAULT 0;
+    DECLARE varExerciseId INT;
+    DECLARE varLike BOOL;
+    DECLARE varSetId INT DEFAULT NULL;
+    
+    DECLARE varNumExercises INT DEFAULT 0;
+    DECLARE varExerciseIdx INT DEFAULT 0;
+    DECLARE varNumSets INT DEFAULT 0;
+    DECLARE varSetIdx INT DEFAULT 0;
+    
+    -- Putting everything into a transaction just incase something breaks so it can be rolled back.
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		ROLLBACK;
+        SIGNAL SQLSTATE '45000'
+		SET MESSAGE_TEXT = 'Stored Procedure failed internally and was rolled back';
+	END;
+    
+    -- Set the transaction as repeatable read because it may read the same row more than once
+    -- and I believe the deletion of old rows requires the reading of the table contents to 
+    -- be consistent because of how the WHERE is structured.
+    SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    
+    START TRANSACTION;
+
+	SET varName = JSON_UNQUOTE(JSON_UNQUOTE(JSON_EXTRACT(in_workoutJson, '$.name')));    
+
+	SET varLastDate = STR_TO_DATE(
+		SUBSTRING(JSON_UNQUOTE(JSON_EXTRACT(in_workoutJson, '$.lastDate')), 1, 19),
+		'%Y-%m-%dT%H:%i:%s'
+	);
+
+	-- Update the workout template with the new data
+	UPDATE WorkoutTemplates 
+	SET lastDate = varLastDate, name = varName 
+	WHERE userId = in_userId AND workoutId = in_workoutId;
+
+	-- First we'll delete the unneeded joins
+	-- Delete unneded sets joins (if user removed some sets)
+	DELETE s FROM Sets s
+	INNER JOIN WorkoutContents wc ON s.userId = wc.userId AND s.exerciseId = wc.exerciseId
+	WHERE wc.workoutId = in_workoutId AND wc.userId = in_userId
+	AND NOT EXISTS (
+		SELECT 1 
+		FROM JSON_TABLE(
+			in_exercisesJson,
+			'$[*]' COLUMNS (
+				exerciseId INT PATH '$.exerciseId',
+				sets JSON PATH '$.sets'
+			)
+		) AS exercise,
+		JSON_TABLE(
+			exercise.sets,
+			'$[*]' COLUMNS (
+				setId INT PATH '$.setId'
+			)
+		) AS setData
+		WHERE exercise.exerciseId = s.exerciseId 
+		AND setData.setId = s.setId
+		AND setData.setId IS NOT NULL
+	);
+    
+    -- Delete unnneded WorkoutContents joins (if user removed exercises)
+    DELETE FROM WorkoutContents
+	WHERE (workoutId, userId, exerciseId) NOT IN (
+		SELECT in_workoutId, in_userId, e.exerciseId
+		FROM JSON_TABLE (
+			in_exercisesJson,
+            '$[*]' COLUMNS (
+				exerciseIdx FOR ORDINALITY,
+                exerciseId INT PATH '$.exerciseId'
+            )
+		) as e
+	);
+
+	-- We should only need to update and insert from here on out
+	SET varNumExercises = JSON_LENGTH(in_exercisesJson);
+    WHILE varExerciseIdx < varNumExercises DO
+    
+		SET varExerciseId = CAST(JSON_EXTRACT(in_exercisesJson, CONCAT('$[', varExerciseIdx, '].exerciseId')) AS SIGNED);
+        SET @likeUnprocessed = JSON_EXTRACT(in_exercisesJson, CONCAT('$[', varExerciseIdx, '].like'));
+        SET varLike = CASE
+			WHEN @likeUnprocessed IS NULL THEN NULL
+			WHEN CAST(@likeUnprocessed AS CHAR) = 'true' THEN 1
+			WHEN CAST(@likeUnprocessed AS CHAR) = '1' THEN 1
+			WHEN CAST(@likeUnprocessed AS CHAR) = 'false' THEN 0
+			WHEN CAST(@likeUnprocessed AS CHAR) = '0' THEN 0
+			ELSE NULL
+		END;
+        
+		-- WorkoutContents update/insert
+        INSERT INTO WorkoutContents (workoutId, userId, exerciseId, `order`)
+		VALUES (in_workoutId, in_userId, varExerciseId, varExerciseIdx)
+		ON DUPLICATE KEY UPDATE
+			`order` = varExerciseIdx;
+          
+		-- ExerciseLog update/insert (assuming the exercise was completed)
+        INSERT INTO ExerciseLog (userId, exerciseId, `like`, timesCompleted)
+        VALUES (in_userId, varExerciseId, varLike, 0)
+        ON DUPLICATE KEY UPDATE
+			`like` = varLike;
+    
+		-- Insert/Update sets
+		SET varNumSets = JSON_LENGTH(JSON_EXTRACT(in_exercisesJson, CONCAT('$[', varExerciseIdx, '].sets')));
+		WHILE varSetIdx < varNumSets DO
+            
+            -- setId can be null if the set row hasn't been created yet (user added it on the front-end side)
+            SET @setIdUnprocessed = JSON_EXTRACT(in_exercisesJson, CONCAT('$[', varExerciseIdx, '].sets[', varSetIdx, '].setId'));
+			IF @setIdUnprocessed IS NULL OR JSON_UNQUOTE(@setIdUnprocessed) = 'null' THEN
+				SET varSetId = NULL;
+			ELSE
+				SET varSetId = CAST(JSON_UNQUOTE(@setIdUnprocessed) AS SIGNED);
+			END IF;
+            
+            SET varLbs = CAST(JSON_EXTRACT(in_exercisesJson, CONCAT('$[', varExerciseIdx, '].sets[', varSetIdx, '].lbs')) AS DECIMAL(10,2));
+            SET varReps = CAST(JSON_EXTRACT(in_exercisesJson, CONCAT('$[', varExerciseIdx, '].sets[', varSetIdx, '].reps')) as SIGNED);
+            
+            IF varSetId IS NULL OR varSetId <= 0 THEN
+				INSERT INTO Sets(userId, exerciseId, `order`, lbs, reps)
+                VALUES (in_userId, varExerciseId, varSetIdx, varLbs, varReps);
+			ELSE
+				UPDATE Sets
+                SET `order` = varSetIdx, lbs = varLbs, reps = varReps
+                WHERE setId = varSetId AND userId = in_userId;
+            END IF;
+            
+            -- Increment loop variable
+            SET varSetIdx = varSetIdx + 1;
+        END WHILE;
+		
+        -- Reset/Increment loop variables
+        SET varSetIdx = 0;
+		SET varExerciseIdx = varExerciseIdx + 1;
+    END WHILE;
+    COMMIT;
+END //
+
+DELIMITER ;

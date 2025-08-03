@@ -3,6 +3,8 @@
 import { env } from "@/src/env";
 import { createConnection } from "mysql2/promise";
 import EditableWorkout from '@/src/components/EditableWorkout';
+import FinishWorkoutButton from '@/src/components/FinishWorkoutButton';
+import OnlySaveWorkoutButton from '@/src/components/OnlySaveWorkoutButton';
 
 interface Props {
     params: Promise<{ id: number }>
@@ -76,10 +78,14 @@ export default async function Workout({ params }: Props) {
         await conn.end();
     }
 
-    return <EditableWorkout 
+    return (<div className="mt-4 text-center">
+        <EditableWorkout 
                 workoutId = {id} 
                 userId = {userId} 
                 workoutData = {workoutData} 
                 exercises={exercisesData} 
-    />;
+        />
+        <FinishWorkoutButton workoutId={id} />
+        <OnlySaveWorkoutButton workoutId={id} />
+    </div>);
 }
