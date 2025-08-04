@@ -1,12 +1,12 @@
 export const dynamic = 'force-dynamic'; // Needed to make the cards reload if the back button is pressed after a card is deleted
 
 import { env } from "@/src/env";
-import { createConnection, RowDataPacket, Connection } from "mysql2/promise";
+import { createConnection } from "mysql2/promise";
 import DeleteCard from '@/src/components/deleteCard'
 import CreateWorkoutButton from '@/src/components/CreateWorkoutButton'
 
 // DB data used for the cards
-interface WorkoutTemplateData extends RowDataPacket {
+interface WorkoutTemplateData {
     workoutId: number;
     lastDate: Date;
     name: string;

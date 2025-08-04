@@ -43,7 +43,8 @@ export default async function Workout({ params }: Props) {
     // Create a transaction to ensure we have a read lock for both queries to execute
     const conn = await createConnection(env.DATABASE_URL);
     try {
-        await conn.query('START TRANSACTION READ ONLY');
+        await conn.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
+        await conn.query('START TRANSACTION');
     
         const [workout] = await conn.execute<WorkoutData[]>(
             `SELECT lastDate, name, lastDuration
