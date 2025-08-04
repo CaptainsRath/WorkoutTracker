@@ -3,6 +3,8 @@
 import { env } from "@/src/env";
 import { createConnection } from "mysql2/promise";
 import EditableWorkout from '@/src/components/EditableWorkout';
+import FinishWorkoutButton from '@/src/components/FinishWorkoutButton';
+import OnlySaveWorkoutButton from '@/src/components/OnlySaveWorkoutButton';
 
 interface Props {
     params: Promise<{ id: number }>
@@ -12,6 +14,7 @@ interface Props {
 interface WorkoutData {
     lastDate: Date;
     name: string;
+    lastDuration: number;
 }
 
 interface ExerciseData {
@@ -42,7 +45,7 @@ export default async function Workout({ params }: Props) {
         await conn.query('START TRANSACTION READ ONLY');
     
         const [workout] = await conn.execute<WorkoutData[]>(
-            `SELECT lastDate, name
+            `SELECT lastDate, name, lastDuration
             FROM WorkoutTemplates
             WHERE userId = ? and workoutId = ?`,
             [userId, id]
@@ -76,10 +79,14 @@ export default async function Workout({ params }: Props) {
         await conn.end();
     }
 
-    return <EditableWorkout 
+    return (<div className="mt-4 text-center">
+        <EditableWorkout 
                 workoutId = {id} 
                 userId = {userId} 
                 workoutData = {workoutData} 
                 exercises={exercisesData} 
-    />;
+        />
+        <FinishWorkoutButton workoutId={id} />
+        <OnlySaveWorkoutButton workoutId={id} />
+    </div>);
 }

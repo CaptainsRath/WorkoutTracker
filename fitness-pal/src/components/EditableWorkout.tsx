@@ -6,6 +6,7 @@ import { useState } from 'react'
 interface WorkoutData {
     lastDate: Date;
     name: string;
+    lastDuration: number;
 }
 
 interface ExerciseData {
@@ -36,5 +37,6 @@ export default function EditableWorkout({ workoutId, userId, workoutData, exerci
 
     return (
         // Front end code here
+        <div>{workoutId}</div>
     )
 }

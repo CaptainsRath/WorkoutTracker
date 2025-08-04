@@ -11,6 +11,7 @@ interface WorkoutTemplateData {
     userId: number;
     lastDate: Date;
     name: string;
+    lastDuration: number;
 }
 
 function getTimeSince(date: Date): string {
@@ -45,7 +46,7 @@ export default async function Workouts() {
     // Query for the ID and name of all exercises
     const userId = 1; // TODO: replace with a paramter passed into the file
     const [workoutTemplates, _] = await conn.execute<WorkoutTemplateData[]>(
-        `SELECT workoutId, lastDate, name 
+        `SELECT workoutId, lastDate, name, lastDuration
         FROM WorkoutTemplates 
         WHERE userId = ? 
         ORDER BY lastDate DESC`,
