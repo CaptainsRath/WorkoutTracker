@@ -5,6 +5,7 @@ import { createConnection } from "mysql2/promise";
 import EditableWorkout from '@/src/components/EditableWorkout';
 import FinishWorkoutButton from '@/src/components/FinishWorkoutButton';
 import OnlySaveWorkoutButton from '@/src/components/OnlySaveWorkoutButton';
+import WorkoutTracker from "@/src/components/WorkoutTracker";
 
 interface Props {
     params: Promise<{ id: number }>
@@ -80,6 +81,7 @@ export default async function Workout({ params }: Props) {
     }
 
     return (<div className="mt-4 text-center">
+        <WorkoutTracker workoutId={id} workoutName={workoutData.name} />
         <EditableWorkout 
                 workoutId = {id} 
                 userId = {userId} 

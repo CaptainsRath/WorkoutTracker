@@ -78,6 +78,7 @@ CREATE TABLE `WorkoutContents` (
     `exerciseId` INT,
     -- `order` is a reserved keyword, so it's good practice to wrap it in backticks.
     `order` INT NOT NULL,
+    'lastDuration' INT,
     PRIMARY KEY (`workoutId`, `userId`, `exerciseId`),
     FOREIGN KEY (`workoutId`, `userId`) REFERENCES `WorkoutTemplates`(`workoutId`, `userId`) ON DELETE CASCADE,
     FOREIGN KEY (`exerciseId`) REFERENCES `Exercises`(`exerciseId`) ON DELETE CASCADE
