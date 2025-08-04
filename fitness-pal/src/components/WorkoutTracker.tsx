@@ -45,12 +45,40 @@ export default function WorkoutTracker({ workoutId, workoutName }: WorkoutTracke
     const handleEndWorkout = useCallback(async () => {
         setIsActive(false);
         try {
-            const response = await fetch(`/api/workouts/${workoutId}/end`, {
+            // TODO: REPLACE THE RESPONSE BODY WITH DATA FROM THE ACTUAL PAGE'S FORM
+            const response = await fetch('/api/finishedWorkout', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ duration: seconds }),
+                body: JSON.stringify({
+                workoutId: workoutId,
+                workoutData: {
+                name: 'Finished Workout With Hardcoded Values',
+                lastDate: new Date().toISOString(),
+                lastDuration: 500
+                },
+                exercises: [
+                {
+                    exerciseId: 1,
+                    like: true,
+                    order: 1,
+                    sets: [
+                    { setId: null, order: 1, lbs: 10, reps: 1 },
+                    { setId: null, order: 0, lbs: 100, reps: 10 }
+                    ]
+                },
+                {
+                    exerciseId: 2,
+                    like: false,
+                    order: 0,
+                    sets: [
+                        { setId: null, order: 1, lbs: 10, reps: 1 },
+                    { setId: null, order: 0, lbs: 110, reps: 8 }
+                    ]
+                }
+                ]
+            })
             });
 
             if (!response.ok) {
@@ -58,14 +86,16 @@ export default function WorkoutTracker({ workoutId, workoutName }: WorkoutTracke
                 const errorData = await response.json().catch(() => (null));
                 throw new Error(errorData?.error || `HTTP error! status: ${response.status}`);
             }
+            const result = await response.json();
+
+            router.push(result.redirect);
 
             alert('Workout finished!');
-            router.push('/dashboard');
         } catch (error) {
             console.error("Failed to end workout:", error);
             alert(`Failed to save workout: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
-    }, [router, workoutId, seconds]);
+    }, [workoutId, seconds]);
 
     const handlePauseResume = useCallback(() => {
         setIsPaused(p => !p);

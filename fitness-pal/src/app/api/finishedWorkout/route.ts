@@ -9,6 +9,10 @@ export async function POST(req: NextRequest) {
         const { workoutId, workoutData, exercises } = body;
         const userId = 1; // TODO: Use actual user ID
 
+        console.log(
+          `Ending workout ${workoutId} for user ${userId} with duration ${workoutData.lastDuration}s`
+        );
+
         const conn = await createConnection(env.DATABASE_URL);
 
         // Call the stored procedure
