@@ -15,7 +15,7 @@ export default function GenericCard({ href, children }: Props) {
         <Link
             href={href}
             prefetch={active ? null : false}
-            className='p-2 h-40 text-center hover:cursor-pointer active:scale-95 rounded'
+            className='p-4 h-32 text-center hover:cursor-pointer active:scale-95 rounded flex flex-col justify-center'
             onMouseEnter={() => setActive(true)}
         >
             {children}
