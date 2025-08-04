@@ -14,7 +14,7 @@ interface WorkoutTemplate extends RowDataPacket {
 
 // Show a single exercise
 export default async function Workout({ params }: Props) {
-    const { id } = params;
+    const { id } = await params;
 
     const conn = await createConnection(env.DATABASE_URL);
     const [rows] = await conn.execute<WorkoutTemplate[]>(
