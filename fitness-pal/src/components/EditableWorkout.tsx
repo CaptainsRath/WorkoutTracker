@@ -6,7 +6,7 @@ import { useState } from 'react'
 interface WorkoutData {
     lastDate: Date;
     name: string;
-    lastDuration: Date;
+    lastDuration: number;
 }
 
 interface ExerciseData {

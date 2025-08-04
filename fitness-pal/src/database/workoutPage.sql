@@ -44,6 +44,7 @@ CREATE PROCEDURE UpdateInsertCompletedWorkout(
 BEGIN
 	DECLARE varName VARCHAR(255);
 	DECLARE varLastDate DATETIME DEFAULT NULL;
+    DECLARE varLastDuration INT DEFAULT NULL;
     DECLARE varLbs REAL DEFAULT 0;
     DECLARE varReps INT DEFAULT 0;
     DECLARE varExerciseId INT;
@@ -76,14 +77,22 @@ BEGIN
 		SUBSTRING(JSON_UNQUOTE(JSON_EXTRACT(in_workoutJson, '$.lastDate')), 1, 19),
 		'%Y-%m-%dT%H:%i:%s'
 	);
+    
+    SET @lastDurationUnprocessed = JSON_EXTRACT(in_workoutJson, CONCAT('$.lastDuration'));
+	IF @lastDurationUnprocessed IS NULL THEN
+		SET varLastDuration = NULL;
+    ELSE
+		SET varLastDuration = CAST(@lastDurationUnprocessed as SIGNED);
+    END IF;
 
 	-- Update the workout template with the new data
 	UPDATE WorkoutTemplates 
-	SET lastDate = varLastDate, name = varName 
+	SET lastDate = varLastDate, name = varName, lastDuration = varLastDuration
 	WHERE userId = in_userId AND workoutId = in_workoutId;
 
 	-- First we'll delete the unneeded joins
 	-- Delete unneded sets joins (if user removed some sets)
+    -- (Cross join was explictly chosen because of how the data is structured)
 	DELETE s FROM Sets s
 	INNER JOIN WorkoutContents wc ON s.userId = wc.userId AND s.exerciseId = wc.exerciseId
 	WHERE wc.workoutId = in_workoutId AND wc.userId = in_userId

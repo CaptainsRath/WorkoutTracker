@@ -14,6 +14,7 @@ interface Props {
 interface WorkoutData {
     lastDate: Date;
     name: string;
+    lastDuration: number;
 }
 
 interface ExerciseData {
@@ -44,7 +45,7 @@ export default async function Workout({ params }: Props) {
         await conn.query('START TRANSACTION READ ONLY');
     
         const [workout] = await conn.execute<WorkoutData[]>(
-            `SELECT lastDate, name
+            `SELECT lastDate, name, lastDuration
             FROM WorkoutTemplates
             WHERE userId = ? and workoutId = ?`,
             [userId, id]

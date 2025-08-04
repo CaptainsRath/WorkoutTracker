@@ -24,6 +24,7 @@ export default function FinishWorkoutButton({ workoutId }: Props) {
         workoutData: {
           name: 'Finished Workout With Hardcoded Values',
           lastDate: new Date().toISOString(),
+          lastDuration: 500
         },
         exercises: [
           {

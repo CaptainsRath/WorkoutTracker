@@ -24,6 +24,7 @@ export default function OnlySaveWorkoutButton({ workoutId }: Props) {
         workoutData: {
           name: 'Only Saved The Workout With Hardcoded Values',
           lastDate: new Date().toISOString(),
+          lastDuration: 500
         },
         exercises: [
           {
