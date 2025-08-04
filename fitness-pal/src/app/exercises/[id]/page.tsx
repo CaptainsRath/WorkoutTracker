@@ -2,24 +2,28 @@ import { createConnection } from "mysql2/promise"
 import { env } from "@/src/env"
 import { Suspense } from 'react'
 import VideoComponent from './video_component'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 interface Props {
-    params: Promise<{ id: string }>
+    params: { id: string }
 }
 
 // Show a single exercise
 export default async function Exercise({ params }: Props) {
-    const { id } = await params
+    const { id } = params;
+    // In a real application, this would come from an authentication session
+    const currentUserId = 1; 
+
     const conn = await createConnection(env.DATABASE_URL)
     const [rows, _] = await conn.execute<any[]>(
-        `SELECT exers.exerciseId, exers.name, exers.description, JSON_ARRAYAGG(musc.name) AS muscles
+        `SELECT exers.exerciseId, exers.name, exers.description, exers.ownerId, JSON_ARRAYAGG(musc.name) AS muscles
          FROM Exercises exers
          JOIN ExercisesMuscles ems ON ems.exerciseId = exers.exerciseId 
          JOIN Muscles musc ON ems.muscleId = musc.muscleId
-         WHERE exers.exerciseId = ? AND (exers.ownerId = 1 OR exers.ownerId IS NULL)
-         GROUP BY exers.exerciseId, exers.name, exers.description`,
-        [Number(id)]
+         WHERE exers.exerciseId = ? AND (exers.ownerId = ? OR exers.ownerId IS NULL)
+         GROUP BY exers.exerciseId, exers.name, exers.description, exers.ownerId`,
+        [Number(id), currentUserId]
     )
     await conn.end();
 
@@ -28,6 +32,7 @@ export default async function Exercise({ params }: Props) {
     }
 
     const exercise = rows[0];
+    const isOwner = exercise.ownerId === currentUserId;
 
     const name = exercise.name;
     const desc = exercise.description;
@@ -37,8 +42,17 @@ export default async function Exercise({ params }: Props) {
 
     return (
         <main className='w-full h-full flex-wrap bg-emerald-700 rounded'>
-            <h1 className='font-bold w-full text-center'>EXERCISE ROUTE {id}</h1>
-            <h1 className='font-bold w-full text-center'>{name}</h1>
+            <div className="flex justify-between items-center p-4 gap-4">
+                <div className="flex-1"></div> {/* Left Spacer */}
+                <h1 className='font-bold text-center text-2xl flex-grow'>{name}</h1>
+                <div className="flex-1 text-right">
+                    {isOwner && (
+                        <Link href={`/exercises/${id}/edit`} className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded whitespace-nowrap">
+                            Edit Exercise
+                        </Link>
+                    )}
+                </div>
+            </div>
             <p className='font-semibold w-full text-center'>{desc}</p>
             
             {showMuscles && (

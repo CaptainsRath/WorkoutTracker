@@ -65,17 +65,21 @@ export default async function Exercises({ searchParams }: ExercisesPageProps) {
 
     return (
         <main className='w-full h-fit flex-wrap bg-emerald-700 rounded'>
-            <div className="flex justify-between items-center p-4">
+            <div className="flex justify-center items-center p-4">
                 <h1 className='font-bold text-xl'>EXERCISES</h1>
-                <Link href="/exercises/create" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            </div>
+            <div className="flex justify-center items-center pb-4 gap-2">
+                <div className="w-full max-w-4xl">
+                    <ExerciseSearch
+                        initialSearchTerm={keywords}
+                        initialSelectedMuscle={muscleIds}
+                        muscles={muscles}
+                    />
+                </div>
+                <Link href="/exercises/create" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded whitespace-nowrap">
                     Create Exercise
                 </Link>
             </div>
-            <ExerciseSearch
-                initialSearchTerm={keywords}
-                initialSelectedMuscle={muscleIds}
-                muscles={muscles}
-            />
             { (keywords || muscleIds) && (
                 <p className='text-center text-white mb-2'>
                     Found {exercises.length} results.
@@ -84,8 +88,7 @@ export default async function Exercises({ searchParams }: ExercisesPageProps) {
             <section className='grid grid-flow-row gap-5 grid-cols-3 mx-5 mb-5 [&>*]:bg-emerald-500'>
                 {exercises?.map((exercise) => {
                     const displayableMuscles = exercise.muscles?.filter(muscle => muscle !== "name\r") || [];
-                    const cardContent = (
-                        <div className="flex flex-col">
+                    const cardContent = (                        <div className="flex flex-col">
                             <span className="font-bold">{exercise.name}</span>
                             
                             {displayableMuscles.length > 0 && (

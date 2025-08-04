@@ -1,26 +1,24 @@
 'use client';
 
 import { useFormState } from 'react-dom';
-import { createExercise, State } from './page';
+import { updateExercise, State, ExerciseData, MuscleData } from './page';
 import Link from 'next/link';
 
-interface MuscleData {
-    muscleId: number;
-    name: string;
+interface EditExerciseFormProps {
+    exercise: ExerciseData;
+    allMuscles: MuscleData[];
 }
 
-interface CreateExerciseFormProps {
-    muscles: MuscleData[];
-}
-
-export function CreateExerciseForm({ muscles }: CreateExerciseFormProps) {
+export function EditExerciseForm({ exercise, allMuscles }: EditExerciseFormProps) {
     const initialState: State = { message: null, errors: {} };
-    const [state, dispatch] = useFormState(createExercise, initialState);
+    const updateExerciseWithId = updateExercise.bind(null, exercise.exerciseId);
+    const [state, dispatch] = useFormState(updateExerciseWithId, initialState);
 
     return (
         <main className="w-full h-fit flex-wrap bg-emerald-700 rounded p-4">
-            <h1 className="font-bold w-full text-center text-xl mb-4">Create New Exercise</h1>
+            <h1 className="font-bold w-full text-center text-xl mb-4">Edit Exercise</h1>
             <form action={dispatch} className="max-w-lg mx-auto bg-emerald-600 p-6 rounded-lg shadow-md">
+                {/* Name Field */}
                 <div className="mb-4">
                     <label htmlFor="name" className="block text-white font-bold mb-2">Exercise Name</label>
                     <input
@@ -28,6 +26,7 @@ export function CreateExerciseForm({ muscles }: CreateExerciseFormProps) {
                         id="name"
                         name="name"
                         required
+                        defaultValue={exercise.name}
                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                         aria-describedby="name-error"
                     />
@@ -37,21 +36,33 @@ export function CreateExerciseForm({ muscles }: CreateExerciseFormProps) {
                         ))}
                     </div>
                 </div>
+
+                {/* Description Field */}
                 <div className="mb-4">
                     <label htmlFor="description" className="block text-white font-bold mb-2">Description</label>
                     <textarea
                         id="description"
                         name="description"
                         rows={4}
+                        defaultValue={exercise.description}
                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                     />
                 </div>
+
+                {/* Muscles Checkboxes */}
                 <div className="mb-6">
                     <label className="block text-white font-bold mb-2">Target Muscles</label>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2 bg-white p-4 rounded max-h-60 overflow-y-auto">
-                        {muscles.map(muscle => (
+                        {allMuscles.map(muscle => (
                             <div key={muscle.muscleId} className="flex items-center">
-                                <input type="checkbox" id={`muscle-${muscle.muscleId}`} name="muscles" value={muscle.muscleId} className="mr-2" />
+                                <input 
+                                    type="checkbox" 
+                                    id={`muscle-${muscle.muscleId}`} 
+                                    name="muscles" 
+                                    value={muscle.muscleId} 
+                                    defaultChecked={exercise.muscleIds.includes(muscle.muscleId)}
+                                    className="mr-2" 
+                                />
                                 <label htmlFor={`muscle-${muscle.muscleId}`} className="text-gray-800">{muscle.name}</label>
                             </div>
                         ))}
@@ -70,17 +81,15 @@ export function CreateExerciseForm({ muscles }: CreateExerciseFormProps) {
                 )}
 
                 <div className="flex items-center justify-between">
-                    <Link href="/exercises" className="inline-block align-baseline font-bold text-sm text-blue-300 hover:text-blue-100">
+                    <Link href={`/exercises/${exercise.exerciseId}`} className="inline-block align-baseline font-bold text-sm text-blue-300 hover:text-blue-100">
                         Cancel
                     </Link>
-                    <button
-                        type="submit"
-                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                    >
-                        Create Exercise
+                    <button type="submit" className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Save Changes
                     </button>
                 </div>
             </form>
         </main>
     );
 }
+
