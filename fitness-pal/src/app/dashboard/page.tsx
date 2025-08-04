@@ -19,7 +19,8 @@ interface UserData extends RowDataPacket {
     UserFirstName: string;
 }
 
-function getTimeSince(date: Date): string {
+function getTimeSince(dateMaybe: Date | string): string {
+    const date = new Date(dateMaybe + 'Z');
     const now = new Date();
     const secondsSince = (now.getTime() - date.getTime()) / 1000;
 
