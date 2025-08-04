@@ -8,10 +8,12 @@ interface Props {
     workoutId: number;
     userId: number;
     deleteRoute: string;
+    buttonBgClass?: string;
+    title?: string;
     children: React.ReactNode | string;
 }
 
-export default function DeleteCard({ href, workoutId, userId, deleteRoute, children }: Props) {
+export default function DeleteCard({ href, workoutId, userId, deleteRoute, children, buttonBgClass = 'bg-blue-700', title = 'Delete workout' }: Props) {
     const [active, setActive] = useState(false)
     const [visible, setVisible] = useState(true)
     const [disabled, setDisabled] = useState(false)
@@ -39,21 +41,21 @@ export default function DeleteCard({ href, workoutId, userId, deleteRoute, child
     if (!visible) return null;
 
     return (
-    <div className="relative">
+    <div className="relative rounded">
         <Link
             href={href}
             prefetch={active ? null : false}
-            className="p-2 h-40 text-center hover:cursor-pointer active:scale-95 rounded block bg-blue-250"
+            className="p-4 h-32 text-center hover:cursor-pointer active:scale-95 rounded block flex flex-col justify-center"
             onMouseEnter={() => setActive(true)}
         >
-            <div className="font-bold">{children}</div>
+            {children}
         </Link>
 
       <button
         onClick={handleDelete}
-          title="Delete workout"
+          title={title}
           disabled={disabled}
-        className="absolute top-2 right-2 z-10 text-red-300 hover:text-red-500 font-bold bg-blue-700 px-2 py-1 rounded"
+        className={`absolute top-2 right-2 z-10 text-red-300 hover:text-red-500 font-bold px-2 py-1 rounded ${buttonBgClass}`}
       >
         x
       </button>
