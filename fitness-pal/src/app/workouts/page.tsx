@@ -8,7 +8,6 @@ import CreateWorkoutButton from '@/src/components/CreateWorkoutButton'
 // DB data used for the cards
 interface WorkoutTemplateData {
     workoutId: number;
-    userId: number;
     lastDate: Date;
     name: string;
     lastDuration: number;
