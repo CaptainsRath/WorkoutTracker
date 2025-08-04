@@ -1,0 +1,62 @@
+'use client'
+
+import { useState } from 'react'
+import Link from 'next/link';
+
+interface Props {
+    href: string;
+    workoutId: number;
+    userId: number;
+    deleteRoute: string;
+    children: React.ReactNode | string;
+}
+
+export default function DeleteCard({ href, workoutId, userId, deleteRoute, children }: Props) {
+    const [active, setActive] = useState(false)
+    const [visible, setVisible] = useState(true)
+    const [disabled, setDisabled] = useState(false)
+
+    // Hide the card locally and send deletion command to server
+    const handleDelete = async (event: React.MouseEvent) => {
+        event.preventDefault(); 
+        event.stopPropagation();
+        setVisible(false);
+        setDisabled(true);
+
+        const result = await fetch(
+            deleteRoute, 
+            { method: 'DELETE', 
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ workoutId, userId }),
+        });
+
+        if (!result.ok) {
+            const error = await result.json()
+            alert(error?.message || 'Failed to delete workout')
+        }
+    };
+
+    if (!visible) return null;
+
+    return (
+    <div className="relative">
+        <Link
+            href={href}
+            prefetch={active ? null : false}
+            className="p-2 h-40 text-center hover:cursor-pointer active:scale-95 rounded block bg-blue-250"
+            onMouseEnter={() => setActive(true)}
+        >
+            <div className="font-bold">{children}</div>
+        </Link>
+
+      <button
+        onClick={handleDelete}
+          title="Delete workout"
+          disabled={disabled}
+        className="absolute top-2 right-2 z-10 text-red-300 hover:text-red-500 font-bold bg-blue-700 px-2 py-1 rounded"
+      >
+        x
+      </button>
+    </div>
+  );
+}

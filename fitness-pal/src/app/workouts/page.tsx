@@ -1,6 +1,8 @@
+export const dynamic = 'force-dynamic'; // Needed to make the cards reload if the back button is pressed after a card is deleted
+
 import { env } from "@/src/env";
 import { createConnection } from "mysql2/promise";
-import GenericCard from '@/src/components/genericCard'
+import DeleteCard from '@/src/components/deleteCard'
 import CreateWorkoutButton from '@/src/components/CreateWorkoutButton'
 
 // DB data used for the cards
@@ -61,10 +63,16 @@ export default async function Workouts() {
             <section className='grid grid-flow-row gap-5 grid-cols-3 mx-5 mb-5 [&>*]:bg-blue-500'>
                 {workoutTemplates.map((workoutTemplates) => {
                     return (
-                        <GenericCard href={`/workouts/${workoutTemplates.workoutId}`} key={workoutTemplates.workoutId}>
+                        <DeleteCard
+                            href={`/workouts/${workoutTemplates.workoutId}`}
+                            key={workoutTemplates.workoutId}
+                            workoutId={workoutTemplates.workoutId}
+                            userId={userId}
+                            deleteRoute="/api/deleteWorkout"
+                        >
                             <div className="font-bold">{workoutTemplates.name}</div>
                             <div className="text-sm text-gray-100">{getTimeSince(workoutTemplates.lastDate)}</div>
-                        </GenericCard>
+                        </DeleteCard>
                     )
                 })}
             </section>
