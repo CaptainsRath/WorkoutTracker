@@ -4,6 +4,8 @@ import { EditExerciseForm } from './EditExerciseForm';
 import { ExerciseDataForEditForm, MuscleData } from '../../actions';
 import { env } from '@/src/env';
 import type { Metadata } from 'next';
+import { auth } from '@/src/utils/auth'; // 1. Import auth
+import { redirect } from 'next/navigation'; // 2. Import redirect
 
 type EditExercisePageProps = {
   // This is the fix. By intersecting the params with a promise-like shape,
@@ -33,7 +35,12 @@ export async function generateMetadata({ params }: EditExercisePageProps): Promi
 
 export default async function EditExercisePage({ params }: EditExercisePageProps) {
   const exerciseId = Number(params.id);
-  const userId = 1; // TODO: Replace with actual user ID from session
+  // 3. Get user from session
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect("/login");
+  }
+  const userId = session.user.id; // 4. Use dynamic ID
 
   const conn = await createConnection(env.DATABASE_URL);
 

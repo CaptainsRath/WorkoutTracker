@@ -5,6 +5,8 @@ import { createConnection } from "mysql2/promise";
 import DeleteCard from '@/src/components/deleteCard'
 import CreateWorkoutButton from '@/src/components/CreateWorkoutButton'
 import { RowDataPacket } from "mysql2/promise";
+import { auth } from '@/src/utils/auth'; // 1. Import auth
+import { redirect } from 'next/navigation'; // 2. Import redirect
 
 // DB data used for the cards
 interface WorkoutTemplateData {
@@ -45,7 +47,12 @@ function getTimeSince(dateMaybe: Date | string): string {
 export default async function Workouts() {
     const conn = await createConnection(env.DATABASE_URL);
     // Query for the ID and name of all exercises
-    const userId = 1; // TODO: replace with a paramter passed into the file
+    // 3. Get user from session
+    const session = await auth();
+    if (!session?.user?.id) {
+      redirect("/login");
+    }
+    const userId = session.user.id; // 4. Use the dynamic ID
     const [workoutTemplates, _] = await conn.execute<WorkoutTemplateData[] & RowDataPacket[]>(
         `SELECT workoutId, lastDate, name, lastDuration
         FROM WorkoutTemplates 
@@ -68,7 +75,7 @@ export default async function Workouts() {
                             href={`/workouts/${workoutTemplates.workoutId}`}
                             key={workoutTemplates.workoutId}
                             workoutId={workoutTemplates.workoutId}
-                            userId={userId}
+                            userId={Number(userId)} 
                             deleteRoute="/api/deleteWorkout"
                         >
                             <div className="font-bold">{workoutTemplates.name}</div>

@@ -1,27 +1,32 @@
+// src/app/api/onlySavedWorkout/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createConnection } from 'mysql2/promise';
 import { env } from '@/src/env';
+import { auth } from '@/src/utils/auth'; // 1. Import auth
 
 export async function POST(req: NextRequest) {
     try {
-        const body = await req.json();
+        // 2. Get user from session
+        const session = await auth();
+        if (!session?.user?.id) {
+            return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+        }
+        const userId = session.user.id; // 3. Use the dynamic ID
 
+        const body = await req.json();
         const { workoutId, workoutData, exercises } = body;
-        const userId = 1; // TODO: Use actual user ID
 
         const conn = await createConnection(env.DATABASE_URL);
 
-        // Call the stored procedure
         await conn.execute(
           'CALL UpdateInsertCompletedWorkout(?, ?, ?, ?)',
           [
             parseInt(workoutId),
-            userId,
+            userId, // 4. Pass the dynamic ID to the stored procedure
             JSON.stringify(workoutData),
             JSON.stringify(exercises),
           ]
         );
-
         await conn.end();
 
         return NextResponse.json({ message: 'Workout Template has been saved' }, { status: 200 });
