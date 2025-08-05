@@ -4,6 +4,7 @@ import { env } from "@/src/env";
 import { createConnection } from "mysql2/promise";
 import DeleteCard from '@/src/components/deleteCard'
 import CreateWorkoutButton from '@/src/components/CreateWorkoutButton'
+import WorkoutSearch from '@/src/components/WorkoutSearch';
 import { RowDataPacket } from "mysql2/promise";
 import { auth } from '@/src/utils/auth'; // 1. Import auth
 import { redirect } from 'next/navigation'; // 2. Import redirect
@@ -14,6 +15,11 @@ interface WorkoutTemplateData {
     lastDate: Date;
     name: string;
     lastDuration: number;
+}
+
+interface WorkoutsPageProps {
+    // This type definition is based on a similar fix in exercises/page.tsx
+    searchParams: Promise<{ [key:string]: string | string[] | undefined }>;
 }
 
 function getTimeSince(dateMaybe: Date | string): string {
@@ -44,29 +50,44 @@ function getTimeSince(dateMaybe: Date | string): string {
 }
 
 // Shows all workouts
-export default async function Workouts() {
+export default async function Workouts({ searchParams }: WorkoutsPageProps) {
+    const resolvedSearchParams = await searchParams;
     const conn = await createConnection(env.DATABASE_URL);
-    // Query for the ID and name of all exercises
-    // 3. Get user from session
+
     const session = await auth();
     if (!session?.user?.id) {
       redirect("/login");
     }
-    const userId = session.user.id; // 4. Use the dynamic ID
-    const [workoutTemplates, _] = await conn.execute<WorkoutTemplateData[] & RowDataPacket[]>(
-        `SELECT workoutId, lastDate, name, lastDuration
-        FROM WorkoutTemplates 
-        WHERE userId = ? 
-        ORDER BY lastDate DESC`,
-        [userId]
-    );
+    const userId = session.user.id;
+    const searchTerm = typeof resolvedSearchParams.search === 'string' ? resolvedSearchParams.search : '';
+
+    let query = `
+        SELECT workoutId, lastDate, name, lastDuration
+        FROM WorkoutTemplates
+        WHERE userId = ?
+    `;
+    const queryParams: (string | number)[] = [userId];
+
+    if (searchTerm) {
+        query += ` AND name LIKE ?`;
+        queryParams.push(`%${searchTerm}%`);
+    }
+
+    query += ` ORDER BY lastDate DESC`;
+
+    const [workoutTemplates] = await conn.execute<WorkoutTemplateData[] & RowDataPacket[]>(query, queryParams);
     await conn.end();
     
     return (
         <main className='w-full h-fit flex-wrap bg-blue-700 rounded'>
-            <h1 className='font-bold w-full text-center'>WORKOUTS</h1>
+            <div className="flex justify-center items-center p-4">
+                <h1 className='font-bold text-xl'>WORKOUTS</h1>
+            </div>
             <div className="text-center my-4">
                 <CreateWorkoutButton/>
+            </div>
+            <div className="mx-auto mb-5 px-5 max-w-md">
+                <WorkoutSearch initialSearchTerm={searchTerm} />
             </div>
             <section className='grid grid-flow-row gap-5 grid-cols-3 mx-5 mb-5 [&>*]:bg-blue-500'>
                 {workoutTemplates.map((workoutTemplates) => {
@@ -84,6 +105,9 @@ export default async function Workouts() {
                     )
                 })}
             </section>
+            {workoutTemplates.length === 0 && searchTerm && (
+                <p className='text-center text-white pb-5'>No workouts found matching your search.</p>
+            )}
         </main>
     )
 }

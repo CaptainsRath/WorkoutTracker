@@ -65,21 +65,19 @@ export default async function Exercises({ searchParams }: ExercisesPageProps) {
                 <h1 className='font-bold text-xl'>EXERCISES</h1>
             </div>
 
-            {/* --- FIX: ADDED BUTTON BACK --- */}
-            <div className="flex justify-center items-center pb-4 gap-4 px-4">
-                <div className="w-full max-w-4xl">
-                    <ExerciseSearch
-                        initialSearchTerm={keywords}
-                        initialSelectedMuscle={muscleIds}
-                        muscles={muscles}
-                    />
-                </div>
-                {/* This is the restored button */}
-                <Link href="/exercises/create" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded whitespace-nowrap transition-colors">
-                    Create Exercise
+            <div className="text-center my-4">
+                <Link href="/exercises/create" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors inline-block">
+                    Create New Exercise
                 </Link>
             </div>
-            {/* --- END OF FIX --- */}
+
+            <div className="w-full max-w-4xl mx-auto px-4 pb-4">
+                <ExerciseSearch
+                    initialSearchTerm={keywords}
+                    initialSelectedMuscle={muscleIds}
+                    muscles={muscles}
+                />
+            </div>
             
             { (keywords || muscleIds) && (
                 <p className='text-center text-white mb-2'>

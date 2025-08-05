@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   DndContext,
   closestCenter,
@@ -192,6 +193,7 @@ function SortableExercise({ exercise, onAddSet, onRemoveExercise, onSetChange, o
 
 // --- EditableWorkout Component ---
 export default function EditableWorkout({ workoutId, userId, workoutData, exercises: initialExercises }: Props) {
+    const router = useRouter();
     const [exercises, setExercises] = useState<ExerciseData[]>(
         initialExercises.map(ex => ({
             ...ex,
@@ -204,14 +206,24 @@ export default function EditableWorkout({ workoutId, userId, workoutData, exerci
     );
     const [currentWorkoutName, setCurrentWorkoutName] = useState(workoutData.name || '');
     // ADDED: State for the timer
-    const [duration, setDuration] = useState(workoutData.lastDuration || 0);
+    const [duration, setDuration] = useState(0);
+    const [isTimerRunning, setIsTimerRunning] = useState(false);
 
     const [isAddExerciseModalOpen, setIsAddExerciseModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState('');
-
-    // ADD A NEW STATE VARIABLE for the suggestion button's loading state
     const [isSuggesting, setIsSuggesting] = useState(false);
+
+    // Timer logic is now in the parent component
+    useEffect(() => {
+        let interval: NodeJS.Timeout | null = null;
+        if (isTimerRunning) {
+            interval = setInterval(() => {
+                setDuration(d => d + 1);
+            }, 1000);
+        }
+        return () => { if (interval) clearInterval(interval); };
+    }, [isTimerRunning]);
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -219,11 +231,6 @@ export default function EditableWorkout({ workoutId, userId, workoutData, exerci
             coordinateGetter: sortableKeyboardCoordinates,
         })
     );
-
-    // ADDED: Callback for WorkoutTracker to update the duration
-    const handleDurationChange = useCallback((newDuration: number) => {
-        setDuration(newDuration);
-    }, []);
 
     const handleSetChange = useCallback((exerciseId: string, setId: string, field: 'lbs' | 'reps', value: number) => {
         setExercises(prevExercises =>
@@ -336,6 +343,7 @@ export default function EditableWorkout({ workoutId, userId, workoutData, exerci
     }, []);
 
     const saveWorkout = async (finishWorkout: boolean) => {
+        setIsTimerRunning(false); // Pause timer before saving
         setIsLoading(true);
         setMessage('');
         try {
@@ -377,6 +385,11 @@ export default function EditableWorkout({ workoutId, userId, workoutData, exerci
             const result = await response.json();
             setMessage(finishWorkout ? 'Workout finished and saved successfully!' : 'Workout saved successfully!');
             console.log('Save successful:', result);
+
+            // If the workout was finished, reset the timer to 0.
+            if (finishWorkout) {
+                setDuration(0);
+            }
 
         } catch (error: any) {
             setMessage(`Error saving workout: ${error.message}`);
@@ -430,7 +443,7 @@ export default function EditableWorkout({ workoutId, userId, workoutData, exerci
         <div className="min-h-screen bg-gray-100 p-4 font-sans antialiased">
             <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-lg p-6">
                 <div className="flex items-center justify-between mb-6">
-                    <button className="p-2 text-gray-600 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors duration-200" aria-label="Back">
+                    <button onClick={() => router.back()} className="p-2 text-gray-600 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors duration-200" aria-label="Back">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                         </svg>
@@ -462,10 +475,23 @@ export default function EditableWorkout({ workoutId, userId, workoutData, exerci
                         </svg>
                         {/* CHANGED: Integrate WorkoutTracker and display live duration */}
                         <WorkoutTracker
-                            initialDuration={duration}
-                            onDurationChange={handleDurationChange}
-                            isSaving={isLoading}
+                            duration={duration}
                         />
+                        <div className="flex items-center ml-2 space-x-1">
+                            {!isTimerRunning ? (
+                                <button onClick={() => setIsTimerRunning(true)} className="p-1 text-green-600 bg-green-100 rounded-full hover:bg-green-200 transition-colors" aria-label="Start timer">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                                    </svg>
+                                </button>
+                            ) : (
+                                <button onClick={() => setIsTimerRunning(false)} className="p-1 text-yellow-600 bg-yellow-100 rounded-full hover:bg-yellow-200 transition-colors" aria-label="Pause timer">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1zm4 0a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                    </svg>
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
 
