@@ -1,18 +1,18 @@
 'use client';
 
-import { useFormState } from 'react-dom';
-import { updateExercise, State, ExerciseData, MuscleData } from './page';
+import { useActionState } from 'react';
+import { updateExercise, State, ExerciseDataForEditForm, MuscleData } from '../../actions';
 import Link from 'next/link';
 
 interface EditExerciseFormProps {
-    exercise: ExerciseData;
+    exercise: ExerciseDataForEditForm;
     allMuscles: MuscleData[];
 }
 
 export function EditExerciseForm({ exercise, allMuscles }: EditExerciseFormProps) {
     const initialState: State = { message: null, errors: {} };
     const updateExerciseWithId = updateExercise.bind(null, exercise.exerciseId);
-    const [state, dispatch] = useFormState(updateExerciseWithId, initialState);
+    const [state, dispatch] = useActionState(updateExerciseWithId, initialState);
 
     return (
         <main className="w-full h-fit flex-wrap bg-emerald-700 rounded p-4">
@@ -92,4 +92,3 @@ export function EditExerciseForm({ exercise, allMuscles }: EditExerciseFormProps
         </main>
     );
 }
-

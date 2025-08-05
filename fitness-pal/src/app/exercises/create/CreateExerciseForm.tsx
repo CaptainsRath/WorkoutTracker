@@ -1,13 +1,8 @@
 'use client';
 
-import { useFormState } from 'react-dom';
-import { createExercise, State } from './page';
+import { useActionState } from 'react';
+import { createExercise, State, MuscleData } from '../actions';
 import Link from 'next/link';
-
-interface MuscleData {
-    muscleId: number;
-    name: string;
-}
 
 interface CreateExerciseFormProps {
     muscles: MuscleData[];
@@ -15,7 +10,7 @@ interface CreateExerciseFormProps {
 
 export function CreateExerciseForm({ muscles }: CreateExerciseFormProps) {
     const initialState: State = { message: null, errors: {} };
-    const [state, dispatch] = useFormState(createExercise, initialState);
+    const [state, dispatch] = useActionState(createExercise, initialState);
 
     return (
         <main className="w-full h-fit flex-wrap bg-emerald-700 rounded p-4">

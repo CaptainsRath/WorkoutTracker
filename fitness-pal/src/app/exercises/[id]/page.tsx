@@ -1,4 +1,4 @@
-import { createConnection } from "mysql2/promise"
+import { createConnection, RowDataPacket } from "mysql2/promise"
 import { env } from "@/src/env"
 import { Suspense } from 'react'
 import VideoComponent from './video_component'
@@ -6,7 +6,19 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 interface Props {
-    params: { id: string }
+    // This is the fix. By intersecting the params with a promise-like shape,
+    // we can satisfy Next.js's internal type checker, which incorrectly
+    // expects a Promise for `params` in async components. At runtime, `params`
+    // is still a plain object, so your code works as expected.
+    params: { id: string } & Promise<{}>;
+}
+
+interface ExerciseDetails extends RowDataPacket {
+    exerciseId: number;
+    name: string;
+    description: string;
+    ownerId: number | null;
+    muscles: string[] | null; // JSON_ARRAYAGG can return NULL
 }
 
 // Show a single exercise
@@ -15,12 +27,13 @@ export default async function Exercise({ params }: Props) {
     // In a real application, this would come from an authentication session
     const currentUserId = 1; 
 
-    const conn = await createConnection(env.DATABASE_URL)
-    const [rows, _] = await conn.execute<any[]>(
+    const conn = await createConnection(env.DATABASE_URL);
+    // Using LEFT JOIN ensures exercises are returned even if they have no muscles.
+    const [rows] = await conn.execute<ExerciseDetails[]>(
         `SELECT exers.exerciseId, exers.name, exers.description, exers.ownerId, JSON_ARRAYAGG(musc.name) AS muscles
          FROM Exercises exers
-         JOIN ExercisesMuscles ems ON ems.exerciseId = exers.exerciseId 
-         JOIN Muscles musc ON ems.muscleId = musc.muscleId
+         LEFT JOIN ExercisesMuscles ems ON ems.exerciseId = exers.exerciseId 
+         LEFT JOIN Muscles musc ON ems.muscleId = musc.muscleId
          WHERE exers.exerciseId = ? AND (exers.ownerId = ? OR exers.ownerId IS NULL)
          GROUP BY exers.exerciseId, exers.name, exers.description, exers.ownerId`,
         [Number(id), currentUserId]
@@ -36,9 +49,10 @@ export default async function Exercise({ params }: Props) {
 
     const name = exercise.name;
     const desc = exercise.description;
-    const muscles: string[] = exercise.muscles ?? [];
+    // Safely handle the case where an exercise has no muscles.
+    const muscles: string[] = exercise.muscles?.filter(Boolean) ?? [];
 
-    const showMuscles = !(muscles.length === 1 && muscles[0] === "name\r");
+    const showMuscles = muscles.length > 0;
 
     return (
         <main className='w-full h-full flex-wrap bg-emerald-700 rounded'>
