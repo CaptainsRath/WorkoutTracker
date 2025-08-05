@@ -8,7 +8,6 @@ export default async function Login() {
 
   return (
     <main className='w-full h-full flex flex-col justify-baseline bg-red-800 rounded'>
-      <h1 className='text-center font-bold'>LOGIN ROUTE</h1>
       <SmartForm />
     </main>
   )
