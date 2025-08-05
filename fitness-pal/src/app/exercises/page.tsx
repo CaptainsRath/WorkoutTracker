@@ -4,6 +4,8 @@ import GenericCard from '@/src/components/genericCard';
 import DeleteCard from "@/src/components/deleteCard";
 import Link from "next/link";
 import ExerciseSearch from '@/src/components/ExerciseSearch';
+import { auth } from "@/src/utils/auth";
+import { redirect } from "next/navigation";
 
 interface ExerciseData {
     exerciseId: number;
@@ -25,7 +27,13 @@ export default async function Exercises({ searchParams }: ExercisesPageProps) {
     const resolvedSearchParams = await searchParams;
     const keywords = typeof resolvedSearchParams.search === 'string' ? resolvedSearchParams.search : '';
     const muscleIds = typeof resolvedSearchParams.muscle === 'string' ? resolvedSearchParams.muscle : '';
-    const ownerId = 1;
+
+    const session = await auth();
+    if (!session?.user?.id) {
+        // Redirect to sign-in, but come back to the exercises page
+        redirect("/api/auth/signin?callbackUrl=/exercises");
+    }
+    const ownerId = session.user.id;
 
     const conn = await createConnection(env.DATABASE_URL);
 
@@ -99,14 +107,14 @@ export default async function Exercises({ searchParams }: ExercisesPageProps) {
                         </div>
                     );
 
-                    if (exercise.ownerId === ownerId) {
+                    if (exercise.ownerId === Number(ownerId)) {
                         // This is a user-owned exercise, so we render it with a delete button.
                         return (
                             <DeleteCard
                                 href={`/exercises/${exercise.exerciseId}`}
                                 key={exercise.exerciseId}
-                                workoutId={exercise.exerciseId} // The component expects `workoutId`, so we pass `exerciseId` to it.
-                                userId={ownerId}
+                                workoutId={exercise.exerciseId}
+                                userId={Number(ownerId)}
                                 deleteRoute="/api/exercises/delete"
                                 buttonBgClass="bg-emerald-700"
                                 title="Delete exercise"

@@ -12,8 +12,13 @@ import { env } from '@/src/env'
 const nonEdgeAuthConfigObject = {
   session: { strategy: 'jwt' },
   callbacks: {
-    async jwt({ token }) {
-      return token
+    async jwt({ token, user }) {
+      // On sign-in, the `user` object is available.
+      // We add its ID to the token.
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
     },
     async session({ session, token }) {
       session.user.id = token.id as string

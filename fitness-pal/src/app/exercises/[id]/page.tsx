@@ -3,6 +3,8 @@ import { env } from "@/src/env"
 import { Suspense } from 'react'
 import VideoComponent from './video_component'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { auth } from '@/src/utils/auth'
 import { notFound } from 'next/navigation'
 
 interface Props {
@@ -24,8 +26,13 @@ interface ExerciseDetails extends RowDataPacket {
 // Show a single exercise
 export default async function Exercise({ params }: Props) {
     const { id } = params;
-    // In a real application, this would come from an authentication session
-    const currentUserId = 1; 
+    const session = await auth();
+    if (!session?.user?.id) {
+        redirect("/api/auth/signin?callbackUrl=/dashboard");
+    }
+
+    // Now we can safely use the userId from the session.
+    const currentUserId = session.user.id;
 
     const conn = await createConnection(env.DATABASE_URL);
     // Using LEFT JOIN ensures exercises are returned even if they have no muscles.
@@ -45,7 +52,7 @@ export default async function Exercise({ params }: Props) {
     }
 
     const exercise = rows[0];
-    const isOwner = exercise.ownerId === currentUserId;
+    const isOwner = exercise.ownerId === Number(currentUserId);
 
     const name = exercise.name;
     const desc = exercise.description;

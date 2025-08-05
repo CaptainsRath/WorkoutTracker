@@ -5,6 +5,7 @@ import { env } from '@/src/env';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
+import { auth } from '@/src/utils/auth';
 
 // Shared State and Schema
 export type State = {
@@ -52,7 +53,12 @@ export async function createExercise(prevState: State, formData: FormData): Prom
     }
 
     const { name, description, muscles } = validatedFields.data;
-    const ownerId = 1; // TODO: Get from auth session
+    const session = await auth();
+    if (!session?.user?.id) {
+        // This should ideally not happen if the page is protected, but as a safeguard:
+        return { message: 'You must be logged in to create an exercise.' };
+    }
+    const ownerId = session.user.id;
 
     let conn: Connection | undefined;
     try {
@@ -99,7 +105,12 @@ export async function updateExercise(exerciseId: number, prevState: State, formD
     }
 
     const { name, description, muscles } = validatedFields.data;
-    const ownerId = 1; // TODO: Get from auth session
+    const session = await auth();
+    if (!session?.user?.id) {
+        // This should ideally not happen if the page is protected, but as a safeguard:
+        return { message: 'You must be logged in to update an exercise.' };
+    }
+    const ownerId = session.user.id;
 
     let conn: Connection | undefined;
     try {

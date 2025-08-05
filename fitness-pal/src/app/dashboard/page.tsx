@@ -1,6 +1,8 @@
 import { env } from "@/src/env";
 import { createConnection, RowDataPacket } from "mysql2/promise";
 import GenericCard from '@/src/components/genericCard'
+import { auth } from "@/src/utils/auth";
+import { redirect } from "next/navigation";
 
 // Force the page to be dynamically rendered on every request.
 export const dynamic = 'force-dynamic';
@@ -12,11 +14,6 @@ interface WorkoutTemplateData extends RowDataPacket {
     lastDate: Date;
     name: string;
     lastDuration: number;
-}
-
-// User data from DB
-interface UserData extends RowDataPacket {
-    UserFirstName: string;
 }
 
 function getTimeSince(dateMaybe: Date | string): string {
@@ -68,15 +65,16 @@ function formatDuration(totalSeconds: number | null): string {
 }
 
 export default async function DashBoard() {
-    const conn = await createConnection(env.DATABASE_URL);
-    const userId = 1; // TODO: replace with a paramter passed into the file
+    const session = await auth();
 
-    // Get user's name
-    const [users, _] = await conn.execute<UserData[]>(
-        'SELECT FirstName FROM Users WHERE userId = ?',
-        [userId]
-    );
-    const user = users[0];
+    // Protect the route. If no session or user ID, redirect to sign-in.
+    if (!session?.user?.id) {
+        redirect("/api/auth/signin?callbackUrl=/dashboard");
+    }
+
+    // Now we can safely use the userId from the session.
+    const userId = session.user.id;
+    const conn = await createConnection(env.DATABASE_URL);
 
     // Query for the 3 most recent workouts
     const [workoutTemplates, __] = await conn.execute<WorkoutTemplateData[]>(
@@ -87,7 +85,7 @@ export default async function DashBoard() {
 
     return (
         <main className='w-full h-fit flex-wrap bg-orange-700 rounded'>
-            <h1 className='font-bold w-full text-center text-2xl pt-4'>Hello, {user?.UserFirstName || 'User'}!</h1>
+            <h1 className='font-bold w-full text-center text-2xl pt-4'>Hello, {session.user.name?.split(' ')[0] || 'User'}!</h1>
             <h2 className='font-bold w-full text-center text-xl py-2'>Your 3 most recent workouts:</h2>
             <section className='grid grid-flow-row gap-5 grid-cols-3 mx-5 mb-5 [&>*]:bg-orange-500'>
                 {workoutTemplates.map((workoutTemplate) => {
