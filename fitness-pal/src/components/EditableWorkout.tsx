@@ -210,6 +210,9 @@ export default function EditableWorkout({ workoutId, userId, workoutData, exerci
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState('');
 
+    // ADD A NEW STATE VARIABLE for the suggestion button's loading state
+    const [isSuggesting, setIsSuggesting] = useState(false);
+
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
@@ -382,9 +385,47 @@ export default function EditableWorkout({ workoutId, userId, workoutData, exerci
             setIsLoading(false);
         }
     };
+
+    // ADD A NEW HANDLER FUNCTION for the suggestion button
+    const handleSuggestExercise = useCallback(async () => {
+        setIsSuggesting(true); // Set loading state
+        setMessage(''); // Clear any previous messages
+
+        try {
+            const response = await fetch('/api/workouts/suggest-exercise', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ workoutId }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                // Throw an error with the message from the API
+                throw new Error(data.message || 'Failed to get a suggestion.');
+            }
+            
+            // The API returns { suggestedExercise: { exerciseId: ..., name: ... } }
+            const { suggestedExercise } = data;
+
+            // Use the existing handleAddExercise function to add it to our UI state!
+            handleAddExercise({
+                exerciseId: suggestedExercise.exerciseId,
+                name: suggestedExercise.name,
+                like: null, // Default value for a new exercise
+            });
+
+            setMessage(`Added suggested exercise: ${suggestedExercise.name}!`);
+
+        } catch (error: any) {
+            console.error("Error suggesting exercise:", error);
+            setMessage(`Suggestion failed: ${error.message}`); // Display the error
+        } finally {
+            setIsSuggesting(false); // Reset loading state
+        }
+    }, [workoutId, handleAddExercise]); // Dependencies for the function
     
     // REMOVED: The DummyExerciseSearchModal component has been removed
-
     return (
         <div className="min-h-screen bg-gray-100 p-4 font-sans antialiased">
             <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-lg p-6">
@@ -459,6 +500,19 @@ export default function EditableWorkout({ workoutId, userId, workoutData, exerci
                     </svg>
                     Add Exercise
                 </button>
+
+                {/* --- NEW SUGGESTION BUTTON --- */}
+                <button
+                    onClick={handleSuggestExercise}
+                    disabled={isSuggesting}
+                    className="w-full py-3 mt-3 bg-teal-600 text-white font-semibold rounded-xl shadow-md hover:bg-teal-700 transition-colors duration-200 flex items-center justify-center disabled:bg-teal-400 disabled:cursor-not-allowed"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M12 21v-1" />
+                    </svg>
+                    {isSuggesting ? 'Thinking...' : 'Suggest an Exercise'}
+                </button>
+                {/* --- END OF NEW BUTTON --- */}
 
                 <button
                     onClick={() => saveWorkout(false)}
