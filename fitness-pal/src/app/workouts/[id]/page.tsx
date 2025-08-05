@@ -6,6 +6,8 @@ import EditableWorkout from '@/src/components/EditableWorkout';
 import OnlySaveWorkoutButton from '@/src/components/OnlySaveWorkoutButton';
 import WorkoutTracker from "@/src/components/WorkoutTracker";
 
+import { auth } from "@/src/utils/auth";
+
 interface Props {
     params: Promise<{ id: number }>
 }
@@ -35,7 +37,10 @@ interface SetData {
 // Show a single exercise
 export default async function Workout({ params }: Props) {
     const { id } = await params
-    const userId = 1; // TODO: replace with a parameter passed into the file
+
+    const session = await auth(); 
+    const userId = session?.user?.id
+
     let workoutData;
     let exercisesData;
 

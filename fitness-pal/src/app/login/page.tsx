@@ -1,9 +1,15 @@
-export default function Login() {
-    return (
-        <main className='w-full h-full flex justify-center bg-red-800 rounded'>
-            <h1 className='font-bold'>LOGIN ROUTE</h1>
-        </main>
-    )
+import SmartForm from '@/src/components/smartForm'
+import { auth } from '@/src/utils/auth'
+import { redirect } from 'next/navigation'
+
+export default async function Login() {
+  const session = await auth()
+  if (session) return redirect('/dashboard')
+
+  return (
+    <main className='w-full h-full flex flex-col justify-baseline bg-red-800 rounded'>
+      <h1 className='text-center font-bold'>LOGIN ROUTE</h1>
+      <SmartForm />
+    </main>
+  )
 }
-
-

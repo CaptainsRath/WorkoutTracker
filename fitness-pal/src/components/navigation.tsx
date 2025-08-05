@@ -1,17 +1,19 @@
-"use client";
-
 import SmartPrefetchLink from "./smartPrefetchLink"
-// No longer need useState or useRouter here
+import SignOutButton from "./signOutButton"
 
-export default function Navigation() {
+import { auth } from "../utils/auth"
+
+export default async function Navigation() {
+    const session = await auth()
+
     return (
-        <nav className='h-10 flex flex-row rounded justify-between items-center'>
+        <nav className='h-10 flex flex-row rounded items-center'>
             <SmartPrefetchLink href='/' />
             <SmartPrefetchLink href='/login' />
             <SmartPrefetchLink href='/dashboard' />
             <SmartPrefetchLink href='/exercises' />
             <SmartPrefetchLink href='/workouts' />
-            {/* The search form has been removed */}
+            {session && <SignOutButton />}
         </nav>
     )
 }
