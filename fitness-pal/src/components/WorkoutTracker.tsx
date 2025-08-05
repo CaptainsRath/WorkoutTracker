@@ -1,137 +1,48 @@
-'use client';
+// src/components/WorkoutTracker.tsx
+'use client'
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, memo } from 'react';
 
+// Define the props to be accepted from EditableWorkout
 interface WorkoutTrackerProps {
-    workoutId: string;
-    workoutName: string;
+  initialDuration: number;
+  onDurationChange: (duration: number) => void;
+  // We can use isSaving to pause the timer display if needed, though not strictly required.
+  isSaving: boolean; 
 }
 
-function formatTime(totalSeconds: number): string {
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
+// Helper function to format seconds into MM:SS
+const formatTime = (totalSeconds: number) => {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+};
 
-    const pad = (num: number) => num.toString().padStart(2, '0');
+function WorkoutTracker({ initialDuration, onDurationChange, isSaving }: WorkoutTrackerProps) {
+  const [elapsedSeconds, setElapsedSeconds] = useState(initialDuration);
 
-    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+  useEffect(() => {
+    // Start a timer interval when the component mounts.
+    const interval = setInterval(() => {
+      setElapsedSeconds(prev => prev + 1);
+    }, 1000);
+
+    // Clean up the interval when the component is unmounted.
+    return () => clearInterval(interval);
+  }, []); // The empty dependency array ensures this effect runs only once.
+
+  useEffect(() => {
+    // Whenever the timer ticks, report the new duration back to the parent component.
+    onDurationChange(elapsedSeconds);
+  }, [elapsedSeconds, onDurationChange]);
+
+  // Use a simple span for displaying the time. This avoids the <div> in <p> hydration error.
+  return (
+    <span className="tabular-nums font-medium">
+      {formatTime(elapsedSeconds)}
+    </span>
+  );
 }
 
-export default function WorkoutTracker({ workoutId, workoutName }: WorkoutTrackerProps) {
-    const [isActive, setIsActive] = useState(false);
-    const [isPaused, setIsPaused] = useState(false);
-    const [seconds, setSeconds] = useState(0);
-    const router = useRouter();
-
-    useEffect(() => {
-        let interval: NodeJS.Timeout | null = null;
-        if (isActive && !isPaused) {
-            interval = setInterval(() => {
-                setSeconds(s => s + 1);
-            }, 1000);
-        }
-        return () => {
-            if (interval) clearInterval(interval);
-        };
-    }, [isActive, isPaused]);
-
-    const handleStartWorkout = useCallback(() => {
-        setSeconds(0);
-        setIsPaused(false);
-        setIsActive(true);
-    }, []);
-
-    const handleEndWorkout = useCallback(async () => {
-        setIsActive(false);
-        try {
-            // TODO: REPLACE THE RESPONSE BODY WITH DATA FROM THE ACTUAL PAGE'S FORM
-            const response = await fetch('/api/finishedWorkout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                workoutId: workoutId,
-                workoutData: {
-                name: 'Finished Workout With Hardcoded Values',
-                lastDate: new Date().toISOString(),
-                lastDuration: 500
-                },
-                exercises: [
-                {
-                    exerciseId: 1,
-                    like: true,
-                    order: 1,
-                    sets: [
-                    { setId: null, order: 1, lbs: 10, reps: 1 },
-                    { setId: null, order: 0, lbs: 100, reps: 10 }
-                    ]
-                },
-                {
-                    exerciseId: 2,
-                    like: false,
-                    order: 0,
-                    sets: [
-                        { setId: null, order: 1, lbs: 10, reps: 1 },
-                    { setId: null, order: 0, lbs: 110, reps: 8 }
-                    ]
-                }
-                ]
-            })
-            });
-
-            if (!response.ok) {
-                // Try to get a more specific error message from the server response
-                const errorData = await response.json().catch(() => (null));
-                throw new Error(errorData?.error || `HTTP error! status: ${response.status}`);
-            }
-            const result = await response.json();
-
-            router.push(result.redirect);
-
-            alert('Workout finished!');
-        } catch (error) {
-            console.error("Failed to end workout:", error);
-            alert(`Failed to save workout: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        }
-    }, [workoutId, seconds]);
-
-    const handlePauseResume = useCallback(() => {
-        setIsPaused(p => !p);
-    }, []);
-
-    const buttonBaseClasses = "text-white font-bold py-4 px-8 rounded-lg text-xl transition-all duration-300 active:scale-95";
-
-    return (
-        <div className="flex flex-col items-center justify-center h-full p-4">
-            <h1 className='font-bold w-full text-center text-2xl mb-8'>{workoutName}</h1>
-            <div className="text-6xl font-mono mb-8">{formatTime(seconds)}</div>
-            <div className="flex items-center justify-center space-x-4">
-                {!isActive ? (
-                    <button
-                        onClick={handleStartWorkout}
-                        className={`${buttonBaseClasses} bg-green-600 hover:bg-green-700`}
-                    >
-                        Start Workout
-                    </button>
-                ) : (
-                    <>
-                        <button
-                            onClick={handlePauseResume}
-                            className={`${buttonBaseClasses} ${isPaused ? 'bg-blue-500 hover:bg-blue-600' : 'bg-yellow-500 hover:bg-yellow-600'}`}
-                        >
-                            {isPaused ? 'Resume' : 'Pause'}
-                        </button>
-                        <button
-                            onClick={handleEndWorkout}
-                            className={`${buttonBaseClasses} bg-red-600 hover:bg-red-700`}
-                        >
-                            End Workout
-                        </button>
-                    </>
-                )}
-            </div>
-        </div>
-    );
-}
+// Use memo to prevent re-rendering if the props haven't changed.
+export default memo(WorkoutTracker);

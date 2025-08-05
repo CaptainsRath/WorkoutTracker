@@ -8,11 +8,7 @@ import { auth } from '@/src/utils/auth'
 import { notFound } from 'next/navigation'
 
 interface Props {
-    // This is the fix. By intersecting the params with a promise-like shape,
-    // we can satisfy Next.js's internal type checker, which incorrectly
-    // expects a Promise for `params` in async components. At runtime, `params`
-    // is still a plain object, so your code works as expected.
-    params: { id: string } & Promise<{}>;
+    params: Promise<{ id: string }>;
 }
 
 interface ExerciseDetails extends RowDataPacket {
@@ -25,7 +21,9 @@ interface ExerciseDetails extends RowDataPacket {
 
 // Show a single exercise
 export default async function Exercise({ params }: Props) {
-    const { id } = params;
+    // THE FIX: Destructure the 'id' right at the top.
+    const { id } = await params;
+    
     const session = await auth();
     if (!session?.user?.id) {
         redirect("/api/auth/signin?callbackUrl=/dashboard");

@@ -18,7 +18,13 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-// Removed import ExerciseSearch from './ExerciseSearch'; as it's no longer directly used here
+// ADDED: Import for the real ExerciseSearch and WorkoutTracker components
+// import ExerciseSearch from './ExerciseSearch';
+// import WorkoutTracker from './WorkoutTracker';
+
+import ExerciseAddModal from './ExerciseAddModal';
+import WorkoutTracker from './WorkoutTracker';
+
 
 // --- Interfaces ---
 interface WorkoutData {
@@ -28,20 +34,27 @@ interface WorkoutData {
 }
 
 interface SetData {
-    id: string; // Unique client-side ID for DND and manipulation (e.g., 'set-12345')
-    dbSetId?: number; // Optional: Database 'setId' for existing sets
+    id: string; 
+    dbSetId?: number; 
     order: number;
     lbs: number;
     reps: number;
 }
 
 interface ExerciseData {
-    id: string; // Unique client-side ID for DND and manipulation (e.g., 'exercise-abcde')
-    exerciseId: number; // Original ID from DB (e.g., 1, 2, 3)
+    id: string; 
+    exerciseId: number; 
     name: string;
     like: boolean | null;
     order: number;
     sets: SetData[];
+}
+
+// ADDED: Simplified interface for adding a new exercise from search
+interface NewExerciseInfo {
+    exerciseId: number;
+    name: string;
+    like: boolean | null;
 }
 
 interface Props {
@@ -51,7 +64,7 @@ interface Props {
     exercises: ExerciseData[];
 }
 
-// --- SortableSet Component ---
+// --- SortableSet Component (No Changes) ---
 function SortableSet({ set, exerciseId, onSetChange, onRemoveSet }: { set: SetData, exerciseId: string, onSetChange: (exerciseId: string, setId: string, field: 'lbs' | 'reps', value: number) => void, onRemoveSet: (exerciseId: string, setId: string) => void }) {
   const {
     attributes,
@@ -68,7 +81,6 @@ function SortableSet({ set, exerciseId, onSetChange, onRemoveSet }: { set: SetDa
 
   return (
     <div ref={setNodeRef} style={style} className="flex items-center justify-between p-2 my-1 bg-gray-50 rounded-lg shadow-sm">
-      {/* Drag handle for sets */}
       <div {...listeners} {...attributes} className="cursor-grab p-2 -ml-2 mr-2 text-gray-400 hover:text-gray-600 rounded-full">
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
           <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
@@ -81,7 +93,7 @@ function SortableSet({ set, exerciseId, onSetChange, onRemoveSet }: { set: SetDa
           <input
             id={`lbs-${set.id}`}
             type="number"
-            value={set.lbs ?? 0} // Ensure value is a number, default to 0
+            value={set.lbs ?? 0}
             onChange={(e) => onSetChange(exerciseId, set.id, 'lbs', parseInt(e.target.value) || 0)}
             className="w-16 p-1 text-center border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-800"
           />
@@ -91,7 +103,7 @@ function SortableSet({ set, exerciseId, onSetChange, onRemoveSet }: { set: SetDa
           <input
             id={`reps-${set.id}`}
             type="number"
-            value={set.reps ?? 0} // Ensure value is a number, default to 0
+            value={set.reps ?? 0}
             onChange={(e) => onSetChange(exerciseId, set.id, 'reps', parseInt(e.target.value) || 0)}
             className="w-16 p-1 text-center border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-800"
           />
@@ -110,7 +122,7 @@ function SortableSet({ set, exerciseId, onSetChange, onRemoveSet }: { set: SetDa
   );
 }
 
-// --- SortableExercise Component ---
+// --- SortableExercise Component (No Changes) ---
 function SortableExercise({ exercise, onAddSet, onRemoveExercise, onSetChange, onRemoveSet, onDragEndSets }: {
   exercise: ExerciseData,
   onAddSet: (exerciseId: string) => void,
@@ -142,16 +154,13 @@ function SortableExercise({ exercise, onAddSet, onRemoveExercise, onSetChange, o
   return (
     <div ref={setNodeRef} style={style} className="bg-white rounded-xl shadow-md p-4 mb-4">
       <div className="flex items-center justify-between mb-3">
-        {/* Exercise Name - draggable handle */}
         <h3 className="text-lg font-semibold text-gray-800 cursor-grab" {...attributes} {...listeners}>{exercise.name}</h3>
         <div className="flex space-x-2">
-          {/* Placeholder for 'Previous' and '...' icons from image */}
           <button className="p-1 text-gray-500 hover:text-gray-700 rounded-full" aria-label="Exercise options">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
               <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
             </svg>
           </button>
-          {/* Remove Exercise Button */}
           <button
             onClick={() => onRemoveExercise(exercise.id)}
             className="p-1 text-red-500 hover:text-red-700 rounded-full"
@@ -163,8 +172,6 @@ function SortableExercise({ exercise, onAddSet, onRemoveExercise, onSetChange, o
           </button>
         </div>
       </div>
-
-      {/* DndContext for sets within this exercise */}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(event) => onDragEndSets(exercise.id, event)}>
         <SortableContext items={exercise.sets.map(s => s.id)} strategy={verticalListSortingStrategy}>
           {exercise.sets.map((set) => (
@@ -172,8 +179,6 @@ function SortableExercise({ exercise, onAddSet, onRemoveExercise, onSetChange, o
           ))}
         </SortableContext>
       </DndContext>
-
-      {/* Add Set Button */}
       <button
         onClick={() => onAddSet(exercise.id)}
         className="w-full py-2 mt-3 text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors duration-200"
@@ -184,9 +189,9 @@ function SortableExercise({ exercise, onAddSet, onRemoveExercise, onSetChange, o
   );
 }
 
+
 // --- EditableWorkout Component ---
 export default function EditableWorkout({ workoutId, userId, workoutData, exercises: initialExercises }: Props) {
-    // State to manage the list of exercises and their sets
     const [exercises, setExercises] = useState<ExerciseData[]>(
         initialExercises.map(ex => ({
             ...ex,
@@ -197,27 +202,13 @@ export default function EditableWorkout({ workoutId, userId, workoutData, exerci
             }))
         }))
     );
-    // State to manage the editable workout name
-    // Ensure currentWorkoutName is always a string to avoid uncontrolled to controlled warning
     const [currentWorkoutName, setCurrentWorkoutName] = useState(workoutData.name || '');
+    // ADDED: State for the timer
+    const [duration, setDuration] = useState(workoutData.lastDuration || 0);
 
     const [isAddExerciseModalOpen, setIsAddExerciseModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState('');
-
-    // Mock muscles data for ExerciseSearch. In a real app, you'd fetch this from your backend.
-    // This is only for the dummy modal now.
-    const mockMuscles: { muscleId: number; name: string; }[] = [
-        { muscleId: 1, name: 'Chest' },
-        { muscleId: 2, name: 'Back' },
-        { muscleId: 3, name: 'Shoulders' },
-        { muscleId: 4, name: 'Biceps' },
-        { muscleId: 5, name: 'Triceps' },
-        { muscleId: 6, name: 'Legs' },
-        { muscleId: 7, name: 'Abs' },
-        { muscleId: 8, name: 'Abductors' },
-        { muscleId: 9, name: 'Adductors' },
-    ];
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -225,6 +216,11 @@ export default function EditableWorkout({ workoutId, userId, workoutData, exerci
             coordinateGetter: sortableKeyboardCoordinates,
         })
     );
+
+    // ADDED: Callback for WorkoutTracker to update the duration
+    const handleDurationChange = useCallback((newDuration: number) => {
+        setDuration(newDuration);
+    }, []);
 
     const handleSetChange = useCallback((exerciseId: string, setId: string, field: 'lbs' | 'reps', value: number) => {
         setExercises(prevExercises =>
@@ -273,19 +269,19 @@ export default function EditableWorkout({ workoutId, userId, workoutData, exerci
             )
         );
     }, []);
-
-    // This function is called when an exercise is "selected" from the dummy modal
-    const handleAddExerciseFromDummySearch = useCallback((newExerciseData: Omit<ExerciseData, 'sets' | 'id' | 'order'>) => {
+    
+    // CHANGED: Renamed function to be more generic
+    const handleAddExercise = useCallback((newExerciseData: NewExerciseInfo) => {
         setExercises(prevExercises => {
             const newExercise: ExerciseData = {
                 id: `exercise-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                 ...newExerciseData,
                 order: prevExercises.length,
-                sets: [],
+                sets: [], // Start with an empty set array
             };
             return [...prevExercises, newExercise];
         });
-        setIsAddExerciseModalOpen(false);
+        setIsAddExerciseModalOpen(false); // Close modal after adding
     }, []);
 
     const handleRemoveExercise = useCallback((exerciseId: string) => {
@@ -347,7 +343,8 @@ export default function EditableWorkout({ workoutId, userId, workoutData, exerci
                 workoutData: {
                     name: currentWorkoutName,
                     lastDate: new Date(),
-                    lastDuration: workoutData.lastDuration,
+                    // CHANGED: Use the live duration from the state
+                    lastDuration: duration,
                 },
                 exercises: exercises.map(ex => ({
                     exerciseId: ex.exerciseId,
@@ -365,9 +362,7 @@ export default function EditableWorkout({ workoutId, userId, workoutData, exerci
 
             const response = await fetch(endpoint, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
 
@@ -379,6 +374,7 @@ export default function EditableWorkout({ workoutId, userId, workoutData, exerci
             const result = await response.json();
             setMessage(finishWorkout ? 'Workout finished and saved successfully!' : 'Workout saved successfully!');
             console.log('Save successful:', result);
+
         } catch (error: any) {
             setMessage(`Error saving workout: ${error.message}`);
             console.error('Error saving workout:', error);
@@ -386,62 +382,12 @@ export default function EditableWorkout({ workoutId, userId, workoutData, exerci
             setIsLoading(false);
         }
     };
-
-    // --- ExerciseSearchModal Component (Dummy) ---
-    // This is a placeholder for your actual ExerciseSearch component.
-    // It simulates searching and selecting an exercise.
-    const DummyExerciseSearchModal = ({ isOpen, onClose, onSelectExercise }: { isOpen: boolean, onClose: () => void, onSelectExercise: (exercise: Omit<ExerciseData, 'sets' | 'id' | 'order'>) => void }) => {
-        if (!isOpen) return null;
-
-        // Mock data for demonstration purposes
-        const mockExercises = [
-            { exerciseId: 101, name: 'Push Up', like: null },
-            { exerciseId: 102, name: 'Squat', like: null },
-            { exerciseId: 103, name: 'Deadlift', like: null },
-            { exerciseId: 104, name: 'Bench Press', like: null },
-            { exerciseId: 105, name: 'Overhead Press', like: null },
-            { exerciseId: 106, name: 'Barbell Row', like: null },
-            { exerciseId: 107, name: 'Bicep Curl', like: null },
-            { exerciseId: 108, name: 'Tricep Extension', like: null },
-        ];
-
-        return (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white p-6 rounded-lg shadow-xl w-11/12 max-w-md">
-                    <h2 className="text-xl font-bold mb-4 text-gray-800">Add Exercise</h2>
-                    {/* This input simulates a search bar */}
-                    <input
-                        type="text"
-                        placeholder="Search exercises (dummy)..."
-                        className="w-full p-2 border border-gray-300 rounded-md mb-4 focus:ring-blue-500 focus:border-blue-500 text-gray-800"
-                    />
-                    <div className="max-h-60 overflow-y-auto border border-gray-200 rounded-md">
-                        {mockExercises.map(ex => (
-                            <button
-                                key={ex.exerciseId}
-                                onClick={() => onSelectExercise(ex)}
-                                className="w-full text-left p-3 my-1 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors duration-150"
-                            >
-                                {ex.name}
-                            </button>
-                        ))}
-                    </div>
-                    <button
-                        onClick={onClose}
-                        className="w-full mt-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors duration-200 font-semibold"
-                    >
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        );
-    };
-
+    
+    // REMOVED: The DummyExerciseSearchModal component has been removed
 
     return (
         <div className="min-h-screen bg-gray-100 p-4 font-sans antialiased">
             <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-lg p-6">
-                {/* Header Section: Back button and Finish button */}
                 <div className="flex items-center justify-between mb-6">
                     <button className="p-2 text-gray-600 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors duration-200" aria-label="Back">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -457,7 +403,6 @@ export default function EditableWorkout({ workoutId, userId, workoutData, exerci
                     </button>
                 </div>
 
-                {/* Workout Title and Info (Date, Duration) */}
                 <div className="mb-6">
                     <input
                         type="text"
@@ -466,7 +411,7 @@ export default function EditableWorkout({ workoutId, userId, workoutData, exerci
                         className="w-full text-2xl font-bold text-gray-900 mb-1 p-1 border-b border-gray-300 focus:border-blue-500 focus:outline-none"
                         aria-label="Workout Name"
                     />
-                    <p className="text-gray-600 text-sm flex items-center mt-1">
+                    <div className="text-gray-600 text-sm flex items-center mt-1">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
@@ -474,20 +419,21 @@ export default function EditableWorkout({ workoutId, userId, workoutData, exerci
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        {/* Placeholder for WorkoutTracker component */}
-                        {/* <WorkoutTracker workoutId={workoutId} userId={userId} /> */}
-                        {workoutData.lastDuration ? `${Math.floor(workoutData.lastDuration / 60)}m ${workoutData.lastDuration % 60}s` : '0m 0s'}
-                    </p>
+                        {/* CHANGED: Integrate WorkoutTracker and display live duration */}
+                        <WorkoutTracker
+                            initialDuration={duration}
+                            onDurationChange={handleDurationChange}
+                            isSaving={isLoading}
+                        />
+                    </div>
                 </div>
 
-                {/* Message display for success/error */}
                 {message && (
                     <div className={`p-3 mb-4 rounded-lg text-sm ${message.startsWith('Error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
                         {message}
                     </div>
                 )}
 
-                {/* Exercises List - Main DndContext for reordering exercises */}
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEndExercises}>
                     <SortableContext items={exercises.map(ex => ex.id)} strategy={verticalListSortingStrategy}>
                         {exercises.map((exercise) => (
@@ -504,7 +450,6 @@ export default function EditableWorkout({ workoutId, userId, workoutData, exerci
                     </SortableContext>
                 </DndContext>
 
-                {/* Add Exercise Button */}
                 <button
                     onClick={() => setIsAddExerciseModalOpen(true)}
                     className="w-full py-3 mt-4 bg-blue-600 text-white font-semibold rounded-xl shadow-md hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center"
@@ -515,7 +460,6 @@ export default function EditableWorkout({ workoutId, userId, workoutData, exerci
                     Add Exercise
                 </button>
 
-                {/* Save Workout Button (separate from Finish) */}
                 <button
                     onClick={() => saveWorkout(false)}
                     className="w-full py-3 mt-3 bg-gray-200 text-gray-800 font-semibold rounded-xl shadow-md hover:bg-gray-300 transition-colors duration-200"
@@ -523,15 +467,13 @@ export default function EditableWorkout({ workoutId, userId, workoutData, exerci
                 >
                     {isLoading ? 'Saving...' : 'Save Workout'}
                 </button>
-
-                {/* Exercise Search Modal */}
-                {isAddExerciseModalOpen && (
-                    <DummyExerciseSearchModal
-                        isOpen={isAddExerciseModalOpen}
-                        onClose={() => setIsAddExerciseModalOpen(false)}
-                        onSelectExercise={handleAddExerciseFromDummySearch}
-                    />
-                )}
+                
+                {/* CHANGED: Render the actual ExerciseSearch component */}
+                <ExerciseAddModal
+                    isOpen={isAddExerciseModalOpen}
+                    onClose={() => setIsAddExerciseModalOpen(false)}
+                    onSelectExercise={handleAddExercise}
+                />
             </div>
         </div>
     );
