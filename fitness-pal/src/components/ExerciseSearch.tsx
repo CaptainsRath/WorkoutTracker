@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 // Define the shape of a single muscle object
-interface Muscle {
+export interface Muscle {
     muscleId: number;
     name: string;
 }

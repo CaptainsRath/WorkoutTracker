@@ -4,6 +4,7 @@ import { env } from "@/src/env";
 import { createConnection } from "mysql2/promise";
 import DeleteCard from '@/src/components/deleteCard'
 import CreateWorkoutButton from '@/src/components/CreateWorkoutButton'
+import { RowDataPacket } from "mysql2/promise";
 
 // DB data used for the cards
 interface WorkoutTemplateData {
@@ -45,7 +46,7 @@ export default async function Workouts() {
     const conn = await createConnection(env.DATABASE_URL);
     // Query for the ID and name of all exercises
     const userId = 1; // TODO: replace with a paramter passed into the file
-    const [workoutTemplates, _] = await conn.execute<WorkoutTemplateData[]>(
+    const [workoutTemplates, _] = await conn.execute<WorkoutTemplateData[] & RowDataPacket[]>(
         `SELECT workoutId, lastDate, name, lastDuration
         FROM WorkoutTemplates 
         WHERE userId = ? 
