@@ -27,7 +27,7 @@ export function EditExerciseForm({ exercise, allMuscles }: EditExerciseFormProps
                         name="name"
                         required
                         defaultValue={exercise.name}
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline bg-white"
                         aria-describedby="name-error"
                     />
                     <div id="name-error" aria-live="polite" aria-atomic="true">
@@ -45,7 +45,7 @@ export function EditExerciseForm({ exercise, allMuscles }: EditExerciseFormProps
                         name="description"
                         rows={4}
                         defaultValue={exercise.description}
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline bg-white"
                     />
                 </div>
 

@@ -123,7 +123,7 @@ export async function updateExercise(exerciseId: number, prevState: State, formD
             [exerciseId]
         );
 
-        if (ownerCheck.length === 0 || ownerCheck[0].ownerId !== ownerId) {
+        if (ownerCheck.length === 0 || ownerCheck[0].ownerId !== Number(ownerId)) {
             await conn.rollback();
             return { message: 'Error: You do not have permission to edit this exercise.' };
         }
@@ -131,7 +131,7 @@ export async function updateExercise(exerciseId: number, prevState: State, formD
         // Update exercise details
         await conn.execute(
             'UPDATE Exercises SET name = ?, description = ? WHERE exerciseId = ? AND ownerId = ?',
-            [name, description, exerciseId, ownerId]
+            [name, description, exerciseId, Number(ownerId)]
         );
 
         // Delete old muscle associations and insert new ones

@@ -103,9 +103,9 @@ export default async function Exercises({ searchParams }: ExercisesPageProps) {
                             <DeleteCard
                                 href={`/exercises/${exercise.exerciseId}`}
                                 key={exercise.exerciseId}
-                                workoutId={exercise.exerciseId}
+                                exerciseId={Number(exercise.exerciseId)}
                                 userId={Number(ownerId)}
-                                deleteRoute="/api/exercises"
+                                deleteRoute="/api/exercises/delete"
                                 buttonBgClass="bg-emerald-700"
                                 title="Delete exercise"
                             >

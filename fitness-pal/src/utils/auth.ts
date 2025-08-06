@@ -21,7 +21,7 @@ const nonEdgeAuthConfigObject = {
       return token;
     },
     async session({ session, token }) {
-      session.user.id = token.id as string
+      session.user.id = String(token.id);
       return session
     },
   },

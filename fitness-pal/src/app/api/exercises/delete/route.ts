@@ -12,7 +12,9 @@ export async function DELETE(request: Request) {
   const conn = await pool.getConnection(); 
   
   try {
-    const { workoutId: exerciseId, userId } = await request.json();
+    const body = await request.json();
+    const exerciseId = body.exerciseId || body.workoutId;
+    const userId = body.userId;
 
     if (!exerciseId || !userId) {
       return NextResponse.json({ message: "Missing exerciseId or userId" }, { status: 400 });

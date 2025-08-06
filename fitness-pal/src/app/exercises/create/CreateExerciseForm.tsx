@@ -23,7 +23,7 @@ export function CreateExerciseForm({ muscles }: CreateExerciseFormProps) {
                         id="name"
                         name="name"
                         required
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline bg-white"
                         aria-describedby="name-error"
                     />
                     <div id="name-error" aria-live="polite" aria-atomic="true">
@@ -38,7 +38,7 @@ export function CreateExerciseForm({ muscles }: CreateExerciseFormProps) {
                         id="description"
                         name="description"
                         rows={4}
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline bg-white"
                     />
                 </div>
                 <div className="mb-6">

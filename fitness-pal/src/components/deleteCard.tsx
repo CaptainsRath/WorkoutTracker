@@ -5,7 +5,8 @@ import Link from 'next/link';
 
 interface Props {
     href: string;
-    workoutId: number;
+    workoutId?: number;
+    exerciseId?: number;
     userId: number;
     deleteRoute: string;
     buttonBgClass?: string;
@@ -13,7 +14,7 @@ interface Props {
     children: React.ReactNode | string;
 }
 
-export default function DeleteCard({ href, workoutId, userId, deleteRoute, children, buttonBgClass = 'bg-blue-700', title = 'Delete workout' }: Props) {
+export default function DeleteCard({ href, workoutId, exerciseId, userId, deleteRoute, children, buttonBgClass = 'bg-blue-700', title = 'Delete item' }: Props) {
     const [active, setActive] = useState(false)
     const [visible, setVisible] = useState(true)
     const [disabled, setDisabled] = useState(false)
@@ -25,16 +26,24 @@ export default function DeleteCard({ href, workoutId, userId, deleteRoute, child
         setVisible(false);
         setDisabled(true);
 
+        const body: { userId: number, workoutId?: number, exerciseId?: number } = { userId };
+        if (workoutId) {
+            body.workoutId = workoutId;
+        }
+        if (exerciseId) {
+            body.exerciseId = exerciseId;
+        }
+
         const result = await fetch(
             deleteRoute, 
             { method: 'DELETE', 
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ workoutId, userId }),
+            body: JSON.stringify(body),
         });
 
         if (!result.ok) {
             const error = await result.json()
-            alert(error?.message || 'Failed to delete workout')
+            alert(error?.message || 'Failed to delete item')
         }
     };
 
