@@ -1,5 +1,5 @@
 -- Specify which database to use
-USE `srsl-fit`;
+USE `prod`;
 
 -- With this query we should be able to build a Workout Page (the page they view as 
 -- they are working out) from an already created template.
@@ -117,15 +117,28 @@ BEGIN
 	);
     
     -- Delete unnneded WorkoutContents joins (if user removed exercises)
-    DELETE FROM WorkoutContents
-	WHERE (workoutId, userId, exerciseId) NOT IN (
-		SELECT in_workoutId, in_userId, e.exerciseId
+    -- DELETE FROM WorkoutContents
+	-- WHERE (workoutId, userId, exerciseId) NOT IN (
+	-- 	SELECT in_workoutId, in_userId, e.exerciseId
+	-- 	FROM JSON_TABLE (
+	-- 		in_exercisesJson,
+    --         '$[*]' COLUMNS (
+	-- 			exerciseIdx FOR ORDINALITY,
+    --             exerciseId INT PATH '$.exerciseId'
+    --         )
+	-- 	) as e
+
+	-- Modifying delete logic to make sure it will keep other workouts not associated with the current workoutid and userid
+	DELETE FROM WorkoutContents
+	WHERE 
+	workoutId = in_workoutId AND userId = in_userId
+	AND exerciseId NOT IN (
+		SELECT e.exerciseId
 		FROM JSON_TABLE (
 			in_exercisesJson,
-            '$[*]' COLUMNS (
-				exerciseIdx FOR ORDINALITY,
-                exerciseId INT PATH '$.exerciseId'
-            )
+			'$[*]' COLUMNS (
+				exerciseId INT PATH '$.exerciseId'
+			)
 		) as e
 	);
 
@@ -282,15 +295,28 @@ BEGIN
 	);
     
     -- Delete unnneded WorkoutContents joins (if user removed exercises)
-    DELETE FROM WorkoutContents
-	WHERE (workoutId, userId, exerciseId) NOT IN (
-		SELECT in_workoutId, in_userId, e.exerciseId
+    -- DELETE FROM WorkoutContents
+	-- WHERE (workoutId, userId, exerciseId) NOT IN (
+	-- 	SELECT in_workoutId, in_userId, e.exerciseId
+	-- 	FROM JSON_TABLE (
+	-- 		in_exercisesJson,
+    --         '$[*]' COLUMNS (
+	-- 			exerciseIdx FOR ORDINALITY,
+    --             exerciseId INT PATH '$.exerciseId'
+    --         )
+	-- 	) as e
+
+	-- Modifying delete logic to make sure it will keep other workouts not associated with the current workoutid and userid
+	DELETE FROM WorkoutContents
+	WHERE 
+	workoutId = in_workoutId AND userId = in_userId
+	AND exerciseId NOT IN (
+		SELECT e.exerciseId
 		FROM JSON_TABLE (
 			in_exercisesJson,
-            '$[*]' COLUMNS (
-				exerciseIdx FOR ORDINALITY,
-                exerciseId INT PATH '$.exerciseId'
-            )
+			'$[*]' COLUMNS (
+				exerciseId INT PATH '$.exerciseId'
+			)
 		) as e
 	);
 
