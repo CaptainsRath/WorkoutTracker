@@ -6,12 +6,13 @@
                 "enableSsl": "Disabled"
             },
             "previewLimit": 50,
-            "server": "localhost",
+            "server": "35.188.175.75",
             "port": 3306,
             "driver": "MySQL",
             "name": "srsl-fit",
-            "database": "srsl-fit",
-            "username": "root"
+            "database": "prod",
+            "username": "rnass2",
+            "password": "password1"
         }
     ]
 }
