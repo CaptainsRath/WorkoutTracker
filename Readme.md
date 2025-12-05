@@ -1,19 +1,10 @@
-# Team007-FutureLegends
-This is a template for CS411 project repository. Please make sure that your title follows the convention: [TeamID]-[YourTeamName]. All TeamID should have a three digit coding (i.e. if you are team 20, you should have `team020` as your ID.). You should also make sure that your url for this repository is [su25-cs411-team000-teamname.git] so TAs can correctly clone your repository and keep them up-to-date.
+# FitnessPal
+FitnessPal is a sidekick to your daily workout. Generate today's workout with the confidence that you are never underdeveloping a part of your body due to our muscle tracking algorithm. We literally will not let you skip leg day! And of course, all exercises have their own description and YouTube tutorial to ensure you are using the proper form while in the gym.
 
-## Live Website
-[link](https://fitness-pal-back--fitness-pal-a8161.us-central1.hosted.app)
+# Important Disclaimer
+This was done as a school project with a school-owned Google Cloud. It was deleted at the end of the course, but the program is still entirely functional locally by using ```npm run dev```.
 
-Once you setup your project, please remember to submit your team formation to the team form.
 
-## Permission
-You should make sure you allow TAs to access your repository. You can add TA(s) as a collaborator to your repository.
 
-## Preparing for your release
-Eash submission should be in it's own [release](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases). Release are specific freezes to your repository. You should submit your commit hash on canvas or google sheet. When tagging your stage, please use the tag `stage.x` where x is the number to represent the stage.
 
-## Keeping things up-to-date
-You should make sure you keep your project root files up-to-date. Information for each file/folders are explained.
 
-## Code Contribution
-Individual code contribution will be used to evaluate individual contribution to the project.
